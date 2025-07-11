@@ -687,18 +687,70 @@ ipcMain.on('getSettings', (event) => {
 ipcMain.on('saveSettings', (event, settings) => {
   try {
     const result = database.settings.save(settings);
-    event.sender.send('saveSettingsResponse', { 
-      success: result.success
-    });
+    event.sender.send('saveSettingsResponse', { success: result.success });
   } catch (error) {
     console.error('Error saving settings:', error);
-    event.sender.send('saveSettingsResponse', { 
+    event.sender.send('saveSettingsResponse', { success: false, error: error.message });
+  }
+});
+
+// QUALIFICATIONS OPERATIONS
+// Handle get qualifications request
+ipcMain.on('getQualifications', (event) => {
+  try {
+    const qualifications = database.qualifications.getAll();
+    event.sender.send('qualificationsData', qualifications);
+  } catch (error) {
+    console.error('Error fetching qualifications:', error);
+    event.sender.send('qualificationsData', []);
+  }
+});
+
+// Handle save qualification request
+ipcMain.on('saveQualification', (event, qualification) => {
+  try {
+    let result;
+    
+    if (qualification.isNew) {
+      // Remove the isNew flag
+      delete qualification.isNew;
+      result = database.qualifications.create(qualification);
+    } else {
+      result = database.qualifications.update(qualification.id, qualification);
+    }
+    
+    event.sender.send('saveQualificationResponse', { 
+      success: result.changes > 0,
+      qualification: result
+    });
+  } catch (error) {
+    console.error('Error saving qualification:', error);
+    event.sender.send('saveQualificationResponse', { 
       success: false, 
-      error: error.message
+      error: error.message 
     });
   }
 });
 
+// Handle delete qualification request
+ipcMain.on('deleteQualification', (event, id) => {
+  try {
+    const result = database.qualifications.delete(id);
+    event.sender.send('deleteQualificationResponse', { 
+      success: result.changes > 0,
+      id: id
+    });
+  } catch (error) {
+    console.error('Error deleting qualification:', error);
+    event.sender.send('deleteQualificationResponse', { 
+      success: false, 
+      error: error.message,
+      id: id
+    });
+  }
+});
+
+// USER OPERATIONS
 // Handle get current user request
 ipcMain.on('getCurrentUser', (event) => {
   try {

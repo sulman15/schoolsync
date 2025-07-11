@@ -37,6 +37,8 @@ const settingsTabs = document.querySelectorAll('.settings-tab');
 const saveSchoolInfoBtn = document.getElementById('save-school-info-btn');
 const saveUserAccountBtn = document.getElementById('save-user-account-btn');
 const savePreferencesBtn = document.getElementById('save-preferences-btn');
+const addQualificationBtn = document.getElementById('add-qualification-btn');
+const qualificationsTableBody = document.getElementById('qualifications-table-body');
 const createBackupBtn = document.getElementById('create-backup-btn');
 const restoreBackupBtn = document.getElementById('restore-backup-btn');
 const resetDataBtn = document.getElementById('reset-data-btn');
@@ -49,6 +51,7 @@ let currentEditingStudentId = null;
 let currentEditingTeacherId = null;
 let currentEditingClassId = null;
 let currentEditingAssignmentId = null;
+let currentEditingQualificationId = null;
 
 // Store teachers list for class assignment
 let teachersList = [];
@@ -62,6 +65,8 @@ let allClassesList = [];
 let allStudentsList = [];
 // Store students list for attendance
 let studentsList = [];
+// Store qualifications list for teacher assignment
+let qualificationsList = [];
 // Store current attendance data
 let currentAttendance = null;
 // Store current assignments data
@@ -287,11 +292,21 @@ function displayTeachers(teachers) {
   
   // Add teacher data to the table
   teachers.forEach(teacher => {
+    // Find qualification name if qualification ID exists
+    let qualificationName = '';
+    if (teacher.qualificationId) {
+      const qualification = qualificationsList.find(q => q.id === teacher.qualificationId);
+      if (qualification) {
+        qualificationName = qualification.name;
+      }
+    }
+    
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${teacher.id}</td>
       <td>${teacher.name}</td>
       <td>${teacher.subject || 'N/A'}</td>
+      <td>${qualificationName || 'N/A'}</td>
       <td>${teacher.email || teacher.phone || 'N/A'}</td>
       <td>
         <button class="btn btn-sm btn-outline-primary edit-teacher" data-id="${teacher.id}">
@@ -715,6 +730,29 @@ function setupEventListeners() {
       resetData();
     });
   }
+  
+  // Add qualification button
+  if (addQualificationBtn) {
+    addQualificationBtn.addEventListener('click', () => {
+      showQualificationModal();
+    });
+  }
+  
+  // Edit and delete qualification buttons (using event delegation)
+  if (qualificationsTableBody) {
+    qualificationsTableBody.addEventListener('click', (e) => {
+      const target = e.target.closest('button');
+      if (!target) return;
+      
+      const qualificationId = target.getAttribute('data-id');
+      
+      if (target.classList.contains('edit-qualification')) {
+        editQualification(qualificationId);
+      } else if (target.classList.contains('delete-qualification')) {
+        deleteQualification(qualificationId);
+      }
+    });
+  }
 }
 
 // STUDENT MODAL FUNCTIONS
@@ -737,11 +775,11 @@ function showStudentModal(student = null) {
             <form id="student-form">
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label for="student-name" class="form-label">Full Name</label>
+                  <label for="student-name" class="form-label">Full Name *</label>
                   <input type="text" class="form-control" id="student-name" value="${isEditing ? student.name : ''}" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label for="student-grade" class="form-label">Grade</label>
+                  <label for="student-grade" class="form-label">Grade *</label>
                   <select class="form-control" id="student-grade" required>
                     <option value="">Select Grade</option>
                     <option value="1st" ${isEditing && student.grade === '1st' ? 'selected' : ''}>1st Grade</option>
@@ -799,7 +837,7 @@ function showStudentModal(student = null) {
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="student-parent-contact" class="form-label">Parent/Guardian Contact</label>
-                  <input type="tel" class="form-control" id="student-parent-contact" value="${isEditing && student.parent_contact ? student.parent_contact : ''}">
+                  <input type="text" class="form-control" id="student-parent-contact" value="${isEditing && student.parent_contact ? student.parent_contact : ''}">
                 </div>
               </div>
               
@@ -819,6 +857,9 @@ function showStudentModal(student = null) {
                     `).join('')}
                   </select>
                 </div>
+              </div>
+              <div class="mt-3">
+                <small class="text-muted">Fields marked with * are required.</small>
               </div>
             </form>
           </div>
@@ -965,11 +1006,11 @@ function showTeacherModal(teacher = null) {
             <form id="teacher-form">
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label for="teacher-name" class="form-label">Full Name</label>
+                  <label for="teacher-name" class="form-label">Full Name *</label>
                   <input type="text" class="form-control" id="teacher-name" value="${isEditing ? teacher.name : ''}" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label for="teacher-subject" class="form-label">Subject</label>
+                  <label for="teacher-subject" class="form-label">Subject *</label>
                   <input type="text" class="form-control" id="teacher-subject" value="${isEditing && teacher.subject ? teacher.subject : ''}" required>
                 </div>
               </div>
@@ -977,7 +1018,14 @@ function showTeacherModal(teacher = null) {
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="teacher-qualification" class="form-label">Qualification</label>
-                  <input type="text" class="form-control" id="teacher-qualification" value="${isEditing && teacher.qualification ? teacher.qualification : ''}">
+                  <select class="form-control" id="teacher-qualification">
+                    <option value="">Select Qualification</option>
+                    ${qualificationsList.map(qualification => `
+                      <option value="${qualification.id}" ${isEditing && teacher.qualificationId === qualification.id ? 'selected' : ''}>
+                        ${qualification.name}
+                      </option>
+                    `).join('')}
+                  </select>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="teacher-gender" class="form-label">Gender</label>
@@ -1016,6 +1064,9 @@ function showTeacherModal(teacher = null) {
                   <input type="email" class="form-control" id="teacher-email" value="${isEditing && teacher.email ? teacher.email : ''}">
                 </div>
               </div>
+              <div class="mt-3">
+                <small class="text-muted">Fields marked with * are required.</small>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -1053,7 +1104,7 @@ function saveTeacher(teacherId = null) {
   // Get form values
   const name = document.getElementById('teacher-name').value;
   const subject = document.getElementById('teacher-subject').value;
-  const qualification = document.getElementById('teacher-qualification').value;
+  const qualificationId = document.getElementById('teacher-qualification').value;
   const gender = document.getElementById('teacher-gender').value;
   const dob = document.getElementById('teacher-dob').value;
   const hireDate = document.getElementById('teacher-hire-date').value;
@@ -1073,7 +1124,7 @@ function saveTeacher(teacherId = null) {
     id: teacherId,
     name,
     subject,
-    qualification,
+    qualificationId: qualificationId || null,
     gender,
     dob,
     hire_date: hireDate,
@@ -1156,11 +1207,11 @@ function showClassModal(classItem = null) {
           <div class="modal-body">
             <form id="classForm">
               <div class="mb-3">
-                <label for="className" class="form-label">Class Name</label>
+                <label for="className" class="form-label">Class Name *</label>
                 <input type="text" class="form-control" id="className" value="${isEditing ? classItem.name : ''}" required>
               </div>
               <div class="mb-3">
-                <label for="classSubject" class="form-label">Subject</label>
+                <label for="classSubject" class="form-label">Subject *</label>
                 <input type="text" class="form-control" id="classSubject" value="${isEditing && classItem.subject ? classItem.subject : ''}">
               </div>
               <div class="mb-3">
@@ -1193,6 +1244,9 @@ function showClassModal(classItem = null) {
               <div class="mb-3">
                 <label for="classDescription" class="form-label">Description</label>
                 <textarea class="form-control" id="classDescription" rows="3">${isEditing && classItem.description ? classItem.description : ''}</textarea>
+              </div>
+              <div class="mt-3">
+                <small class="text-muted">Fields marked with * are required.</small>
               </div>
             </form>
           </div>
@@ -1702,7 +1756,7 @@ function showAssignmentModal(assignment = null) {
           <div class="modal-body">
             <form id="assignment-form">
               <div class="mb-3">
-                <label for="assignment-title" class="form-label">Title</label>
+                <label for="assignment-title" class="form-label">Title *</label>
                 <input type="text" class="form-control" id="assignment-title" value="${isEditing ? assignment.title : ''}" required>
               </div>
               <div class="mb-3">
@@ -1721,13 +1775,16 @@ function showAssignmentModal(assignment = null) {
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label for="assignment-max-score" class="form-label">Maximum Score</label>
+                  <label for="assignment-max-score" class="form-label">Maximum Score *</label>
                   <input type="number" class="form-control" id="assignment-max-score" min="0" value="${isEditing ? assignment.maxScore : '100'}" required>
                 </div>
               </div>
               <div class="mb-3">
                 <label for="assignment-due-date" class="form-label">Due Date</label>
                 <input type="date" class="form-control" id="assignment-due-date" value="${isEditing && assignment.dueDate ? assignment.dueDate : ''}">
+              </div>
+              <div class="mt-3">
+                <small class="text-muted">Fields marked with * are required.</small>
               </div>
             </form>
           </div>
@@ -2087,6 +2144,9 @@ function loadSettingsData() {
   
   // Request current user data
   window.api.send('getCurrentUser');
+  
+  // Request qualifications data
+  window.api.send('getQualifications');
 }
 
 // Handle received settings data
@@ -2355,4 +2415,162 @@ window.api.receive('resetResponse', (response) => {
   } else {
     alert(`Error resetting data: ${response.error || 'Unknown error'}`);
   }
+});
+
+// Handle received qualifications data
+window.api.receive('qualificationsData', (qualifications) => {
+  // Store qualifications for teacher assignment
+  qualificationsList = qualifications || [];
+  
+  // Populate qualifications table
+  if (qualificationsTableBody) {
+    // Clear existing data
+    qualificationsTableBody.innerHTML = '';
+    
+    if (qualifications.length === 0) {
+      qualificationsTableBody.innerHTML = '<tr><td colspan="3" class="text-center">No qualifications found</td></tr>';
+      return;
+    }
+    
+    // Add qualifications to the table
+    qualifications.forEach(qualification => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${qualification.id}</td>
+        <td>${qualification.name}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary edit-qualification" data-id="${qualification.id}">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger delete-qualification" data-id="${qualification.id}">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      `;
+      qualificationsTableBody.appendChild(row);
+    });
+  }
 }); 
+
+// QUALIFICATION FUNCTIONS
+// Show modal to add or edit a qualification
+function showQualificationModal(qualification = null) {
+  // Determine if we're adding or editing
+  const isEditing = qualification !== null;
+  const modalTitle = isEditing ? 'Edit Qualification' : 'Add New Qualification';
+  
+  // Create modal HTML
+  const modalHtml = `
+    <div class="modal fade" id="qualificationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">${modalTitle}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="qualification-form">
+              <div class="mb-3">
+                <label for="qualification-name" class="form-label">Qualification Name *</label>
+                <input type="text" class="form-control" id="qualification-name" value="${isEditing ? qualification.name : ''}" required>
+              </div>
+              <div class="mt-3">
+                <small class="text-muted">Fields marked with * are required.</small>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="save-qualification-btn">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to the document
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = modalHtml;
+  document.body.appendChild(modalContainer);
+  
+  // Initialize the modal
+  const modal = new bootstrap.Modal(document.getElementById('qualificationModal'));
+  modal.show();
+  
+  // Add event listener to the save button
+  document.getElementById('save-qualification-btn').addEventListener('click', () => {
+    saveQualification(isEditing ? qualification.id : null);
+  });
+  
+  // Clean up when modal is hidden
+  document.getElementById('qualificationModal').addEventListener('hidden.bs.modal', function () {
+    document.body.removeChild(modalContainer);
+    currentEditingQualificationId = null;
+  });
+}
+
+// Save qualification data
+function saveQualification(qualificationId = null) {
+  // Get form values
+  const name = document.getElementById('qualification-name').value;
+  
+  // Validate required fields
+  if (!name) {
+    alert('Please enter a qualification name');
+    return;
+  }
+  
+  // Create qualification object
+  const qualification = {
+    isNew: qualificationId === null,
+    id: qualificationId,
+    name
+  };
+  
+  // Send to main process
+  window.api.send('saveQualification', qualification);
+  
+  // Hide the modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('qualificationModal'));
+  modal.hide();
+}
+
+// Edit qualification function
+function editQualification(qualificationId) {
+  // Find qualification in the list
+  const qualification = qualificationsList.find(q => q.id === qualificationId);
+  if (qualification) {
+    currentEditingQualificationId = qualificationId;
+    showQualificationModal(qualification);
+  } else {
+    alert('Error: Qualification not found');
+  }
+}
+
+// Delete qualification function
+function deleteQualification(qualificationId) {
+  // Show confirmation dialog
+  if (confirm('Are you sure you want to delete this qualification?')) {
+    window.api.send('deleteQualification', qualificationId);
+  }
+}
+
+// Handle save qualification response
+window.api.receive('saveQualificationResponse', (response) => {
+  if (response.success) {
+    // Refresh qualifications list
+    window.api.send('getQualifications');
+  } else {
+    alert(`Error saving qualification: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle delete qualification response
+window.api.receive('deleteQualificationResponse', (response) => {
+  if (response.success) {
+    // Refresh qualifications list
+    window.api.send('getQualifications');
+  } else {
+    alert(`Error deleting qualification: ${response.error || 'Unknown error'}`);
+  }
+});

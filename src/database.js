@@ -31,7 +31,8 @@ const dbFiles = {
   users: path.join(userDataPath, 'users.json'),
   attendance: path.join(userDataPath, 'attendance.json'),
   grades: path.join(userDataPath, 'grades.json'),
-  settings: path.join(userDataPath, 'settings.json')
+  settings: path.join(userDataPath, 'settings.json'),
+  qualifications: path.join(userDataPath, 'qualifications.json')
 };
 
 // Initialize database files if they don't exist
@@ -79,6 +80,18 @@ function initializeDatabase() {
   // Initialize grades.json
   if (!fs.existsSync(dbFiles.grades)) {
     fs.writeFileSync(dbFiles.grades, JSON.stringify([], null, 2));
+  }
+  
+  // Initialize qualifications.json
+  if (!fs.existsSync(dbFiles.qualifications)) {
+    const defaultQualifications = [
+      { id: 'q001', name: 'Bachelor of Education' },
+      { id: 'q002', name: 'Master of Education' },
+      { id: 'q003', name: 'PhD in Education' },
+      { id: 'q004', name: 'Teaching Certificate' }
+    ];
+    fs.writeFileSync(dbFiles.qualifications, JSON.stringify(defaultQualifications, null, 2));
+    console.log('Default qualifications created');
   }
   
   // Initialize settings.json
@@ -675,6 +688,69 @@ const settingsDb = {
   }
 };
 
+// Qualifications CRUD operations
+const qualificationsDb = {
+  // Get all qualifications
+  getAll: () => {
+    return readDbFile(dbFiles.qualifications);
+  },
+  
+  // Get qualification by ID
+  getById: (id) => {
+    const qualifications = readDbFile(dbFiles.qualifications);
+    return qualifications.find(qualification => qualification.id === id);
+  },
+  
+  // Create a new qualification
+  create: (qualification) => {
+    const qualifications = readDbFile(dbFiles.qualifications);
+    
+    // Generate a new ID if not provided
+    if (!qualification.id) {
+      const lastId = qualifications.length > 0 
+        ? Math.max(...qualifications.map(q => parseInt(q.id.substring(1)) || 0)) 
+        : 0;
+      qualification.id = `q${String(lastId + 1).padStart(3, '0')}`;
+    }
+    
+    qualifications.push(qualification);
+    if (writeDbFile(dbFiles.qualifications, qualifications)) {
+      return { id: qualification.id, changes: 1 };
+    }
+    return { id: qualification.id, changes: 0 };
+  },
+  
+  // Update a qualification
+  update: (id, qualificationData) => {
+    const qualifications = readDbFile(dbFiles.qualifications);
+    const index = qualifications.findIndex(qualification => qualification.id === id);
+    
+    if (index !== -1) {
+      qualifications[index] = { ...qualifications[index], ...qualificationData };
+      if (writeDbFile(dbFiles.qualifications, qualifications)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  },
+  
+  // Delete a qualification
+  delete: (id) => {
+    const qualifications = readDbFile(dbFiles.qualifications);
+    const initialLength = qualifications.length;
+    const filteredQualifications = qualifications.filter(qualification => qualification.id !== id);
+    
+    if (filteredQualifications.length < initialLength) {
+      if (writeDbFile(dbFiles.qualifications, filteredQualifications)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  }
+};
+
 // Backup and restore operations
 const backupDb = {
   // Create a backup of all data
@@ -808,6 +884,7 @@ module.exports = {
   grades: gradesDb,
   users: usersDb,
   settings: settingsDb,
+  qualifications: qualificationsDb,
   backup: backupDb,
   
   // Close function (no-op for file-based storage)

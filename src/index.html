@@ -130,6 +130,7 @@
                   <th>ID</th>
                   <th>Name</th>
                   <th>Subject</th>
+                  <th>Qualification</th>
                   <th>Contact</th>
                   <th>Actions</th>
                 </tr>
@@ -370,6 +371,9 @@
                   <a href="#" class="list-group-item list-group-item-action" data-settings-tab="system-preferences">
                     System Preferences
                   </a>
+                  <a href="#" class="list-group-item list-group-item-action" data-settings-tab="qualifications">
+                    Teacher Qualifications
+                  </a>
                   <a href="#" class="list-group-item list-group-item-action" data-settings-tab="backup-restore">
                     Backup & Restore
                   </a>
@@ -502,6 +506,35 @@
                         </div>
                         <button type="button" class="btn btn-primary" id="save-preferences-btn">Save Preferences</button>
                       </form>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Qualifications Settings -->
+                <div id="qualifications-settings" class="settings-tab">
+                  <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                      <h5 class="mb-0">Teacher Qualifications</h5>
+                      <button type="button" class="btn btn-primary btn-sm" id="add-qualification-btn">
+                        <i class="bi bi-plus"></i> Add New
+                      </button>
+                    </div>
+                    <div class="card-body">
+                      <p>Manage teacher qualification options that will be available when adding or editing teachers.</p>
+                      <div class="table-responsive">
+                        <table class="table table-striped">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Qualification Name</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody id="qualifications-table-body">
+                            <!-- Qualifications will be loaded here -->
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
