@@ -40,6 +40,9 @@ const savePreferencesBtn = document.getElementById('save-preferences-btn');
 const createBackupBtn = document.getElementById('create-backup-btn');
 const restoreBackupBtn = document.getElementById('restore-backup-btn');
 const resetDataBtn = document.getElementById('reset-data-btn');
+const studentSearchInput = document.getElementById('student-search-input');
+const teacherSearchInput = document.getElementById('teacher-search-input');
+const classSearchInput = document.getElementById('class-search-input');
 
 // Store the currently editing IDs
 let currentEditingStudentId = null;
@@ -49,8 +52,14 @@ let currentEditingAssignmentId = null;
 
 // Store teachers list for class assignment
 let teachersList = [];
+// Store all teachers for search functionality
+let allTeachersList = [];
 // Store classes list for student assignment
 let classesList = [];
+// Store all classes for search functionality
+let allClassesList = [];
+// Store all students for search functionality
+let allStudentsList = [];
 // Store students list for attendance
 let studentsList = [];
 // Store current attendance data
@@ -96,15 +105,15 @@ function updateDashboardCounts() {
   const classCount = document.getElementById('class-count');
   
   if (studentCount) {
-    studentCount.textContent = studentsTableBody ? studentsTableBody.childElementCount : 0;
+    studentCount.textContent = allStudentsList ? allStudentsList.length : 0;
   }
   
   if (teacherCount) {
-    teacherCount.textContent = teachersList ? teachersList.length : 0;
+    teacherCount.textContent = allTeachersList ? allTeachersList.length : 0;
   }
   
   if (classCount) {
-    classCount.textContent = classesList ? classesList.length : 0;
+    classCount.textContent = allClassesList ? allClassesList.length : 0;
   }
 }
 
@@ -163,6 +172,31 @@ function loadStudentsData() {
 
 // Handle received students data
 window.api.receive('studentsData', (students) => {
+  // Store all students for search functionality
+  allStudentsList = students;
+  
+  // If there's an active search query, apply the filter
+  const searchQuery = studentSearchInput ? studentSearchInput.value.toLowerCase().trim() : '';
+  if (searchQuery) {
+    const filteredStudents = students.filter(student => 
+      student.id.toLowerCase().includes(searchQuery) ||
+      student.name.toLowerCase().includes(searchQuery) ||
+      student.grade.toLowerCase().includes(searchQuery) ||
+      (student.email && student.email.toLowerCase().includes(searchQuery)) ||
+      (student.phone && student.phone.toLowerCase().includes(searchQuery))
+    );
+    displayStudents(filteredStudents);
+  } else {
+    // Display all students
+    displayStudents(students);
+  }
+  
+  // Update dashboard counts
+  updateDashboardCounts();
+});
+
+// Display students in the table
+function displayStudents(students) {
   // Clear loading indicator
   studentsTableBody.innerHTML = '';
   
@@ -200,10 +234,7 @@ window.api.receive('studentsData', (students) => {
     `;
     studentsTableBody.appendChild(row);
   });
-  
-  // Update dashboard counts
-  updateDashboardCounts();
-});
+}
 
 // TEACHER FUNCTIONS
 // Load teachers data into the table
@@ -220,7 +251,33 @@ function loadTeachersData() {
 
 // Handle received teachers data
 window.api.receive('teachersData', (teachers) => {
-  // Clear loading indicator
+  // Store all teachers for search functionality
+  allTeachersList = teachers;
+  teachersList = teachers;
+  
+  // If there's an active search query, apply the filter
+  const searchQuery = teacherSearchInput ? teacherSearchInput.value.toLowerCase().trim() : '';
+  if (searchQuery) {
+    const filteredTeachers = teachers.filter(teacher => 
+      teacher.id.toLowerCase().includes(searchQuery) ||
+      teacher.name.toLowerCase().includes(searchQuery) ||
+      (teacher.subject && teacher.subject.toLowerCase().includes(searchQuery)) ||
+      (teacher.email && teacher.email.toLowerCase().includes(searchQuery)) ||
+      (teacher.phone && teacher.phone.toLowerCase().includes(searchQuery))
+    );
+    displayTeachers(filteredTeachers);
+  } else {
+    // Display all teachers
+    displayTeachers(teachers);
+  }
+  
+  // Update dashboard counts
+  updateDashboardCounts();
+});
+
+// Display teachers in the table
+function displayTeachers(teachers) {
+  // Clear existing table data
   teachersTableBody.innerHTML = '';
   
   if (teachers.length === 0) {
@@ -228,16 +285,13 @@ window.api.receive('teachersData', (teachers) => {
     return;
   }
   
-  // Store teachers for class assignment
-  teachersList = teachers;
-  
   // Add teacher data to the table
   teachers.forEach(teacher => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${teacher.id}</td>
       <td>${teacher.name}</td>
-      <td>${teacher.subject || 'Not assigned'}</td>
+      <td>${teacher.subject || 'N/A'}</td>
       <td>${teacher.email || teacher.phone || 'N/A'}</td>
       <td>
         <button class="btn btn-sm btn-outline-primary edit-teacher" data-id="${teacher.id}">
@@ -250,10 +304,7 @@ window.api.receive('teachersData', (teachers) => {
     `;
     teachersTableBody.appendChild(row);
   });
-  
-  // Update dashboard counts
-  updateDashboardCounts();
-});
+}
 
 // CLASS FUNCTIONS
 // Load classes data into the table
@@ -273,16 +324,38 @@ function loadClassesData() {
 
 // Handle received classes data
 window.api.receive('classesData', (classes) => {
-  // Clear loading indicator
+  // Store all classes for search functionality
+  allClassesList = classes;
+  classesList = classes;
+  
+  // If there's an active search query, apply the filter
+  const searchQuery = classSearchInput ? classSearchInput.value.toLowerCase().trim() : '';
+  if (searchQuery) {
+    const filteredClasses = classes.filter(classItem => 
+      classItem.id.toLowerCase().includes(searchQuery) ||
+      classItem.name.toLowerCase().includes(searchQuery) ||
+      (classItem.subject && classItem.subject.toLowerCase().includes(searchQuery)) ||
+      (classItem.schedule && classItem.schedule.toLowerCase().includes(searchQuery))
+    );
+    displayClasses(filteredClasses);
+  } else {
+    // Display all classes
+    displayClasses(classes);
+  }
+  
+  // Update dashboard counts
+  updateDashboardCounts();
+});
+
+// Display classes in the table
+function displayClasses(classes) {
+  // Clear existing table data
   classesTableBody.innerHTML = '';
   
   if (classes.length === 0) {
     classesTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No classes found</td></tr>';
     return;
   }
-  
-  // Store classes for student assignment
-  classesList = classes;
   
   // Add class data to the table
   classes.forEach(classItem => {
@@ -301,7 +374,7 @@ window.api.receive('classesData', (classes) => {
       <td>${classItem.name}</td>
       <td>${classItem.subject || 'N/A'}</td>
       <td>${teacherName}</td>
-      <td>${classItem.schedule || 'Not scheduled'}</td>
+      <td>${classItem.schedule || 'N/A'}</td>
       <td>
         <button class="btn btn-sm btn-outline-primary edit-class" data-id="${classItem.id}">
           <i class="bi bi-pencil"></i>
@@ -314,10 +387,15 @@ window.api.receive('classesData', (classes) => {
     classesTableBody.appendChild(row);
   });
   
-  // Update dashboard counts
-  updateDashboardCounts();
-  
   // Update attendance class select
+  updateAttendanceClassSelect();
+  
+  // Update grades class select
+  updateGradesClassSelect();
+}
+
+// Update attendance class select
+function updateAttendanceClassSelect() {
   if (attendanceClassSelect) {
     // Keep the current selection
     const currentSelection = attendanceClassSelect.value;
@@ -328,7 +406,7 @@ window.api.receive('classesData', (classes) => {
     }
     
     // Add class options
-    classes.forEach(classItem => {
+    allClassesList.forEach(classItem => {
       const option = document.createElement('option');
       option.value = classItem.id;
       option.textContent = `${classItem.name} ${classItem.subject ? `(${classItem.subject})` : ''}`;
@@ -340,8 +418,10 @@ window.api.receive('classesData', (classes) => {
       attendanceClassSelect.value = currentSelection;
     }
   }
-  
-  // Update grades class select
+}
+
+// Update grades class select
+function updateGradesClassSelect() {
   if (gradesClassSelect) {
     // Keep the current selection
     const currentSelection = gradesClassSelect.value;
@@ -352,7 +432,7 @@ window.api.receive('classesData', (classes) => {
     }
     
     // Add class options
-    classes.forEach(classItem => {
+    allClassesList.forEach(classItem => {
       const option = document.createElement('option');
       option.value = classItem.id;
       option.textContent = `${classItem.name} ${classItem.subject ? `(${classItem.subject})` : ''}`;
@@ -364,7 +444,7 @@ window.api.receive('classesData', (classes) => {
       gradesClassSelect.value = currentSelection;
     }
   }
-});
+}
 
 // Set up event listeners for various actions
 function setupEventListeners() {
@@ -372,6 +452,27 @@ function setupEventListeners() {
   if (addStudentBtn) {
     addStudentBtn.addEventListener('click', () => {
       showStudentModal();
+    });
+  }
+  
+  // Student search functionality
+  if (studentSearchInput) {
+    studentSearchInput.addEventListener('input', () => {
+      const searchQuery = studentSearchInput.value.toLowerCase().trim();
+      if (searchQuery === '') {
+        // If search is empty, display all students
+        displayStudents(allStudentsList);
+      } else {
+        // Filter students based on search query
+        const filteredStudents = allStudentsList.filter(student => 
+          student.id.toLowerCase().includes(searchQuery) ||
+          student.name.toLowerCase().includes(searchQuery) ||
+          student.grade.toLowerCase().includes(searchQuery) ||
+          (student.email && student.email.toLowerCase().includes(searchQuery)) ||
+          (student.phone && student.phone.toLowerCase().includes(searchQuery))
+        );
+        displayStudents(filteredStudents);
+      }
     });
   }
   
@@ -398,6 +499,27 @@ function setupEventListeners() {
     });
   }
   
+  // Teacher search functionality
+  if (teacherSearchInput) {
+    teacherSearchInput.addEventListener('input', () => {
+      const searchQuery = teacherSearchInput.value.toLowerCase().trim();
+      if (searchQuery === '') {
+        // If search is empty, display all teachers
+        displayTeachers(allTeachersList);
+      } else {
+        // Filter teachers based on search query
+        const filteredTeachers = allTeachersList.filter(teacher => 
+          teacher.id.toLowerCase().includes(searchQuery) ||
+          teacher.name.toLowerCase().includes(searchQuery) ||
+          (teacher.subject && teacher.subject.toLowerCase().includes(searchQuery)) ||
+          (teacher.email && teacher.email.toLowerCase().includes(searchQuery)) ||
+          (teacher.phone && teacher.phone.toLowerCase().includes(searchQuery))
+        );
+        displayTeachers(filteredTeachers);
+      }
+    });
+  }
+  
   // Edit and delete teacher buttons (using event delegation)
   if (teachersTableBody) {
     teachersTableBody.addEventListener('click', (e) => {
@@ -418,6 +540,26 @@ function setupEventListeners() {
   if (addClassBtn) {
     addClassBtn.addEventListener('click', () => {
       showClassModal();
+    });
+  }
+  
+  // Class search functionality
+  if (classSearchInput) {
+    classSearchInput.addEventListener('input', () => {
+      const searchQuery = classSearchInput.value.toLowerCase().trim();
+      if (searchQuery === '') {
+        // If search is empty, display all classes
+        displayClasses(allClassesList);
+      } else {
+        // Filter classes based on search query
+        const filteredClasses = allClassesList.filter(classItem => 
+          classItem.id.toLowerCase().includes(searchQuery) ||
+          classItem.name.toLowerCase().includes(searchQuery) ||
+          (classItem.subject && classItem.subject.toLowerCase().includes(searchQuery)) ||
+          (classItem.schedule && classItem.schedule.toLowerCase().includes(searchQuery))
+        );
+        displayClasses(filteredClasses);
+      }
     });
   }
   
@@ -759,12 +901,13 @@ function saveStudent(studentId = null) {
 // Handle save student response
 window.api.receive('saveStudentResponse', (response) => {
   if (response.success) {
-    // Reload students data
-    loadStudentsData();
-    // Update dashboard counts
-    updateDashboardCounts();
+    // Refresh the students list
+    window.api.send('getStudents');
+    
+    // Reset the current editing ID
+    currentEditingStudentId = null;
   } else {
-    alert('Error saving student: ' + response.error);
+    alert(`Error saving student: ${response.error || 'Unknown error'}`);
   }
 });
 
@@ -795,12 +938,10 @@ function deleteStudent(studentId) {
 // Handle delete student response
 window.api.receive('deleteStudentResponse', (response) => {
   if (response.success) {
-    // Reload students data
-    loadStudentsData();
-    // Update dashboard counts
-    updateDashboardCounts();
+    // Refresh the students list
+    window.api.send('getStudents');
   } else {
-    alert('Error deleting student: ' + response.error);
+    alert(`Error deleting student: ${response.error || 'Unknown error'}`);
   }
 });
 
@@ -952,12 +1093,13 @@ function saveTeacher(teacherId = null) {
 // Handle save teacher response
 window.api.receive('saveTeacherResponse', (response) => {
   if (response.success) {
-    // Reload teachers data
-    loadTeachersData();
-    // Update dashboard counts
-    updateDashboardCounts();
+    // Refresh the teachers list
+    window.api.send('getTeachers');
+    
+    // Reset the current editing ID
+    currentEditingTeacherId = null;
   } else {
-    alert('Error saving teacher: ' + response.error);
+    alert(`Error saving teacher: ${response.error || 'Unknown error'}`);
   }
 });
 
@@ -988,12 +1130,10 @@ function deleteTeacher(teacherId) {
 // Handle delete teacher response
 window.api.receive('deleteTeacherResponse', (response) => {
   if (response.success) {
-    // Reload teachers data
-    loadTeachersData();
-    // Update dashboard counts
-    updateDashboardCounts();
+    // Refresh the teachers list
+    window.api.send('getTeachers');
   } else {
-    alert('Error deleting teacher: ' + response.error);
+    alert(`Error deleting teacher: ${response.error || 'Unknown error'}`);
   }
 }); 
 
@@ -1131,10 +1271,11 @@ function saveClass(classId = null) {
 // Handle save class response
 window.api.receive('saveClassResponse', (response) => {
   if (response.success) {
-    // Reload classes data
-    loadClassesData();
-    // Update dashboard counts
-    updateDashboardCounts();
+    // Refresh the classes list
+    window.api.send('getClasses');
+    
+    // Reset the current editing ID
+    currentEditingClassId = null;
   } else {
     alert(`Error saving class: ${response.error || 'Unknown error'}`);
   }
@@ -1170,10 +1311,8 @@ function deleteClass(classId) {
 // Handle delete class response
 window.api.receive('deleteClassResponse', (response) => {
   if (response.success) {
-    // Reload classes data
-    loadClassesData();
-    // Update dashboard counts
-    updateDashboardCounts();
+    // Refresh the classes list
+    window.api.send('getClasses');
   } else {
     alert(`Error deleting class: ${response.error || 'Unknown error'}`);
   }
