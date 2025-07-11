@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const database = require('./database');
+const fs = require('fs');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
@@ -790,12 +791,45 @@ ipcMain.on('updateUser', (event, userData) => {
 });
 
 // Handle create backup request
-ipcMain.on('createBackup', (event) => {
+ipcMain.on('createBackup', (event, filePath) => {
   try {
-    const result = database.backup.create();
-    event.sender.send('backupResponse', result);
+    // Create backup data
+    const backup = database.backup.create();
+    
+    if (backup.success) {
+      // Write the backup data to the specified file path
+      fs.writeFileSync(filePath, JSON.stringify(backup.data, null, 2));
+      
+      event.sender.send('backupResponse', { 
+        success: true,
+        path: filePath
+      });
+    } else {
+      event.sender.send('backupResponse', { 
+        success: false,
+        error: 'Failed to create backup data'
+      });
+    }
   } catch (error) {
     console.error('Error creating backup:', error);
+    event.sender.send('backupResponse', { 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
+// Handle show save dialog request
+ipcMain.on('showSaveDialog', async (event, options) => {
+  try {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, options);
+    
+    if (!canceled && filePath) {
+      // User selected a file path, create backup at that location
+      event.sender.send('createBackup', filePath);
+    }
+  } catch (error) {
+    console.error('Error showing save dialog:', error);
     event.sender.send('backupResponse', { 
       success: false, 
       error: error.message

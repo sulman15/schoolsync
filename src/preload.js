@@ -44,7 +44,8 @@ contextBridge.exposeInMainWorld(
         'updateUser',
         'createBackup',
         'restoreBackup',
-        'resetData'
+        'resetData',
+        'showSaveDialog'
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
@@ -89,7 +90,8 @@ contextBridge.exposeInMainWorld(
         'updateUserResponse',
         'backupResponse',
         'restoreResponse',
-        'resetResponse'
+        'resetResponse',
+        'createBackup'
       ];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender` 
@@ -97,4 +99,4 @@ contextBridge.exposeInMainWorld(
       }
     }
   }
-); 
+);

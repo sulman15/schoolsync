@@ -680,16 +680,6 @@ const backupDb = {
   // Create a backup of all data
   create: () => {
     try {
-      // Create backup directory if it doesn't exist
-      const backupDir = path.join(userDataPath, 'backups');
-      if (!fs.existsSync(backupDir)) {
-        fs.mkdirSync(backupDir, { recursive: true });
-      }
-      
-      // Create timestamp for backup file name
-      const timestamp = new Date().toISOString().replace(/[:.-]/g, '_').replace(/T/g, '-').split('Z')[0];
-      const backupFile = path.join(backupDir, `schoolsync_backup_${timestamp}.json`);
-      
       // Collect all data
       const backup = {
         students: readDbFile(dbFiles.students),
@@ -702,10 +692,7 @@ const backupDb = {
         version: '1.0.0'
       };
       
-      // Write backup file
-      fs.writeFileSync(backupFile, JSON.stringify(backup, null, 2));
-      
-      return { success: true, path: backupFile };
+      return { success: true, data: backup };
     } catch (error) {
       console.error('Error creating backup:', error);
       return { success: false, error: error.message };

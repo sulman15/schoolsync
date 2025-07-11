@@ -1,0 +1,25 @@
+{
+  "students": [],
+  "teachers": [],
+  "classes": [],
+  "attendance": [],
+  "grades": [],
+  "settings": {
+    "schoolInfo": {
+      "name": "SchoolSync Academy",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "",
+      "principal": ""
+    },
+    "preferences": {
+      "theme": "light",
+      "dateFormat": "MM/DD/YYYY",
+      "language": "en",
+      "autoBackup": false
+    }
+  },
+  "timestamp": "2025-07-11T21:58:26.792Z",
+  "version": "1.0.0"
+}

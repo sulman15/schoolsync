@@ -2128,8 +2128,22 @@ function saveSystemPreferences() {
 
 // Create backup
 function createBackup() {
-  window.api.send('createBackup');
+  // Request a save location from the user
+  window.api.send('showSaveDialog', {
+    title: 'Save Backup',
+    defaultPath: `schoolsync_backup_${new Date().toISOString().replace(/[:.-]/g, '_').replace(/T/g, '-').split('Z')[0]}.json`,
+    filters: [
+      { name: 'JSON Files', extensions: ['json'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
 }
+
+// Handle createBackup response from main process
+window.api.receive('createBackup', (filePath) => {
+  // Send request to create backup at the specified path
+  window.api.send('createBackup', filePath);
+});
 
 // Restore backup
 function restoreBackup() {
