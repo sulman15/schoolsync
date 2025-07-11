@@ -4,6 +4,9 @@ const contentPages = document.querySelectorAll('.content-page');
 const addStudentBtn = document.getElementById('add-student-btn');
 const studentsTableBody = document.getElementById('students-table-body');
 
+// Store the currently editing student ID
+let currentEditingStudentId = null;
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
   // Set up navigation
@@ -92,7 +95,7 @@ function setupEventListeners() {
   // Add student button
   if (addStudentBtn) {
     addStudentBtn.addEventListener('click', () => {
-      showAddStudentModal();
+      showStudentModal();
     });
   }
   
@@ -113,15 +116,19 @@ function setupEventListeners() {
   }
 }
 
-// Show modal to add a new student
-function showAddStudentModal() {
+// Show modal to add or edit a student
+function showStudentModal(student = null) {
+  // Determine if we're adding or editing
+  const isEditing = student !== null;
+  const modalTitle = isEditing ? 'Edit Student' : 'Add New Student';
+  
   // Create modal HTML
   const modalHtml = `
     <div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Add New Student</h5>
+            <h5 class="modal-title">${modalTitle}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -129,24 +136,24 @@ function showAddStudentModal() {
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="student-name" class="form-label">Full Name</label>
-                  <input type="text" class="form-control" id="student-name" required>
+                  <input type="text" class="form-control" id="student-name" value="${isEditing ? student.name : ''}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="student-grade" class="form-label">Grade</label>
                   <select class="form-control" id="student-grade" required>
                     <option value="">Select Grade</option>
-                    <option value="1st">1st Grade</option>
-                    <option value="2nd">2nd Grade</option>
-                    <option value="3rd">3rd Grade</option>
-                    <option value="4th">4th Grade</option>
-                    <option value="5th">5th Grade</option>
-                    <option value="6th">6th Grade</option>
-                    <option value="7th">7th Grade</option>
-                    <option value="8th">8th Grade</option>
-                    <option value="9th">9th Grade</option>
-                    <option value="10th">10th Grade</option>
-                    <option value="11th">11th Grade</option>
-                    <option value="12th">12th Grade</option>
+                    <option value="1st" ${isEditing && student.grade === '1st' ? 'selected' : ''}>1st Grade</option>
+                    <option value="2nd" ${isEditing && student.grade === '2nd' ? 'selected' : ''}>2nd Grade</option>
+                    <option value="3rd" ${isEditing && student.grade === '3rd' ? 'selected' : ''}>3rd Grade</option>
+                    <option value="4th" ${isEditing && student.grade === '4th' ? 'selected' : ''}>4th Grade</option>
+                    <option value="5th" ${isEditing && student.grade === '5th' ? 'selected' : ''}>5th Grade</option>
+                    <option value="6th" ${isEditing && student.grade === '6th' ? 'selected' : ''}>6th Grade</option>
+                    <option value="7th" ${isEditing && student.grade === '7th' ? 'selected' : ''}>7th Grade</option>
+                    <option value="8th" ${isEditing && student.grade === '8th' ? 'selected' : ''}>8th Grade</option>
+                    <option value="9th" ${isEditing && student.grade === '9th' ? 'selected' : ''}>9th Grade</option>
+                    <option value="10th" ${isEditing && student.grade === '10th' ? 'selected' : ''}>10th Grade</option>
+                    <option value="11th" ${isEditing && student.grade === '11th' ? 'selected' : ''}>11th Grade</option>
+                    <option value="12th" ${isEditing && student.grade === '12th' ? 'selected' : ''}>12th Grade</option>
                   </select>
                 </div>
               </div>
@@ -156,47 +163,47 @@ function showAddStudentModal() {
                   <label for="student-gender" class="form-label">Gender</label>
                   <select class="form-control" id="student-gender">
                     <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
+                    <option value="Male" ${isEditing && student.gender === 'Male' ? 'selected' : ''}>Male</option>
+                    <option value="Female" ${isEditing && student.gender === 'Female' ? 'selected' : ''}>Female</option>
+                    <option value="Other" ${isEditing && student.gender === 'Other' ? 'selected' : ''}>Other</option>
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="student-dob" class="form-label">Date of Birth</label>
-                  <input type="date" class="form-control" id="student-dob">
+                  <input type="date" class="form-control" id="student-dob" value="${isEditing && student.dob ? student.dob : ''}">
                 </div>
               </div>
               
               <div class="mb-3">
                 <label for="student-address" class="form-label">Address</label>
-                <textarea class="form-control" id="student-address" rows="2"></textarea>
+                <textarea class="form-control" id="student-address" rows="2">${isEditing && student.address ? student.address : ''}</textarea>
               </div>
               
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="student-phone" class="form-label">Phone</label>
-                  <input type="tel" class="form-control" id="student-phone">
+                  <input type="tel" class="form-control" id="student-phone" value="${isEditing && student.phone ? student.phone : ''}">
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="student-email" class="form-label">Email</label>
-                  <input type="email" class="form-control" id="student-email">
+                  <input type="email" class="form-control" id="student-email" value="${isEditing && student.email ? student.email : ''}">
                 </div>
               </div>
               
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="student-parent-name" class="form-label">Parent/Guardian Name</label>
-                  <input type="text" class="form-control" id="student-parent-name">
+                  <input type="text" class="form-control" id="student-parent-name" value="${isEditing && student.parent_name ? student.parent_name : ''}">
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="student-parent-contact" class="form-label">Parent/Guardian Contact</label>
-                  <input type="tel" class="form-control" id="student-parent-contact">
+                  <input type="tel" class="form-control" id="student-parent-contact" value="${isEditing && student.parent_contact ? student.parent_contact : ''}">
                 </div>
               </div>
               
               <div class="mb-3">
                 <label for="student-enrollment-date" class="form-label">Enrollment Date</label>
-                <input type="date" class="form-control" id="student-enrollment-date" value="${new Date().toISOString().split('T')[0]}">
+                <input type="date" class="form-control" id="student-enrollment-date" value="${isEditing && student.enrollment_date ? student.enrollment_date : new Date().toISOString().split('T')[0]}">
               </div>
             </form>
           </div>
@@ -220,17 +227,18 @@ function showAddStudentModal() {
   
   // Add event listener to the save button
   document.getElementById('save-student-btn').addEventListener('click', () => {
-    saveStudent();
+    saveStudent(isEditing ? student.id : null);
   });
   
   // Clean up when modal is hidden
   document.getElementById('studentModal').addEventListener('hidden.bs.modal', function () {
     document.body.removeChild(modalContainer);
+    currentEditingStudentId = null;
   });
 }
 
 // Save student data
-function saveStudent() {
+function saveStudent(studentId = null) {
   // Get form values
   const name = document.getElementById('student-name').value;
   const grade = document.getElementById('student-grade').value;
@@ -251,7 +259,8 @@ function saveStudent() {
   
   // Create student object
   const student = {
-    isNew: true,
+    isNew: studentId === null,
+    id: studentId,
     name,
     grade,
     gender,
@@ -284,16 +293,34 @@ window.api.receive('saveStudentResponse', (response) => {
 
 // Edit student function
 function editStudent(studentId) {
-  // This would show a modal with the student's data for editing
-  console.log(`Editing student: ${studentId}`);
-  // In a real application, you would fetch the student data and populate the form
+  // Request the student data from main process
+  window.api.send('getStudent', studentId);
+  currentEditingStudentId = studentId;
 }
+
+// Handle get student response
+window.api.receive('getStudentResponse', (student) => {
+  if (student) {
+    showStudentModal(student);
+  } else {
+    alert('Error: Student not found');
+  }
+});
 
 // Delete student function
 function deleteStudent(studentId) {
   // Show confirmation dialog
   if (confirm('Are you sure you want to delete this student?')) {
-    console.log(`Deleting student: ${studentId}`);
-    // In a real application, you would send a delete request to the main process
+    window.api.send('deleteStudent', studentId);
   }
-} 
+}
+
+// Handle delete student response
+window.api.receive('deleteStudentResponse', (response) => {
+  if (response.success) {
+    // Reload students data
+    loadStudentsData();
+  } else {
+    alert('Error deleting student: ' + response.error);
+  }
+}); 

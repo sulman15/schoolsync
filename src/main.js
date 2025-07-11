@@ -137,6 +137,17 @@ ipcMain.on('getStudents', (event) => {
   }
 });
 
+// Handle get single student request
+ipcMain.on('getStudent', (event, studentId) => {
+  try {
+    const student = database.students.getById(studentId);
+    event.sender.send('getStudentResponse', student);
+  } catch (error) {
+    console.error('Error fetching student:', error);
+    event.sender.send('getStudentResponse', null);
+  }
+});
+
 // Handle student creation/update
 ipcMain.on('saveStudent', (event, student) => {
   try {
@@ -157,6 +168,8 @@ ipcMain.on('saveStudent', (event, student) => {
       
       result = database.students.create(student);
     } else {
+      // Update timestamp
+      student.updated_at = new Date().toISOString();
       result = database.students.update(student.id, student);
     }
     
@@ -164,6 +177,24 @@ ipcMain.on('saveStudent', (event, student) => {
   } catch (error) {
     console.error('Error saving student:', error);
     event.sender.send('saveStudentResponse', { success: false, error: error.message });
+  }
+});
+
+// Handle student deletion
+ipcMain.on('deleteStudent', (event, studentId) => {
+  try {
+    const result = database.students.delete(studentId);
+    event.sender.send('deleteStudentResponse', { 
+      success: result.changes > 0,
+      id: studentId
+    });
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    event.sender.send('deleteStudentResponse', { 
+      success: false, 
+      error: error.message,
+      id: studentId
+    });
   }
 });
 
