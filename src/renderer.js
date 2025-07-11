@@ -7,6 +7,15 @@ const addTeacherBtn = document.getElementById('add-teacher-btn');
 const teachersTableBody = document.getElementById('teachers-table-body');
 const addClassBtn = document.getElementById('add-class-btn');
 const classesTableBody = document.getElementById('classes-table-body');
+const attendanceClassSelect = document.getElementById('attendance-class');
+const attendanceDateInput = document.getElementById('attendance-date');
+const loadAttendanceBtn = document.getElementById('load-attendance-btn');
+const saveAttendanceBtn = document.getElementById('save-attendance-btn');
+const attendanceContainer = document.getElementById('attendance-container');
+const attendanceTableBody = document.getElementById('attendance-table-body');
+const attendanceHistoryBody = document.getElementById('attendance-history-body');
+const attendanceClassName = document.getElementById('attendance-class-name');
+const attendanceDateDisplay = document.getElementById('attendance-date-display');
 
 // Store the currently editing IDs
 let currentEditingStudentId = null;
@@ -17,6 +26,10 @@ let currentEditingClassId = null;
 let teachersList = [];
 // Store classes list for student assignment
 let classesList = [];
+// Store students list for attendance
+let studentsList = [];
+// Store current attendance data
+let currentAttendance = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,6 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Set up event listeners
   setupEventListeners();
+  
+  // Set default date for attendance
+  if (attendanceDateInput) {
+    attendanceDateInput.value = new Date().toISOString().split('T')[0];
+  }
 });
 
 // Load dashboard data
@@ -83,6 +101,8 @@ function setupNavigation() {
         loadTeachersData();
       } else if (targetPage === 'classes') {
         loadClassesData();
+      } else if (targetPage === 'attendance') {
+        loadAttendanceData();
       }
       // Add similar conditions for other pages
     });
@@ -260,6 +280,30 @@ window.api.receive('classesData', (classes) => {
   
   // Update dashboard counts
   updateDashboardCounts();
+  
+  // Update attendance class select
+  if (attendanceClassSelect) {
+    // Keep the current selection
+    const currentSelection = attendanceClassSelect.value;
+    
+    // Clear existing options except the first one
+    while (attendanceClassSelect.options.length > 1) {
+      attendanceClassSelect.remove(1);
+    }
+    
+    // Add class options
+    classes.forEach(classItem => {
+      const option = document.createElement('option');
+      option.value = classItem.id;
+      option.textContent = `${classItem.name} ${classItem.subject ? `(${classItem.subject})` : ''}`;
+      attendanceClassSelect.appendChild(option);
+    });
+    
+    // Restore the selection if it exists
+    if (currentSelection) {
+      attendanceClassSelect.value = currentSelection;
+    }
+  }
 });
 
 // Set up event listeners for various actions
@@ -329,6 +373,45 @@ function setupEventListeners() {
         editClass(classId);
       } else if (target.classList.contains('delete-class')) {
         deleteClass(classId);
+      }
+    });
+  }
+  
+  // Load attendance button
+  if (loadAttendanceBtn) {
+    loadAttendanceBtn.addEventListener('click', () => {
+      loadClassAttendance();
+    });
+  }
+  
+  // Save attendance button
+  if (saveAttendanceBtn) {
+    saveAttendanceBtn.addEventListener('click', () => {
+      saveAttendance();
+    });
+  }
+  
+  // Attendance history actions (using event delegation)
+  if (attendanceHistoryBody) {
+    attendanceHistoryBody.addEventListener('click', (e) => {
+      const target = e.target.closest('button');
+      if (!target) return;
+      
+      const classId = target.getAttribute('data-class-id');
+      const date = target.getAttribute('data-date');
+      
+      if (target.classList.contains('view-attendance')) {
+        // Set the class and date in the form
+        if (attendanceClassSelect) {
+          attendanceClassSelect.value = classId;
+        }
+        if (attendanceDateInput) {
+          attendanceDateInput.value = date;
+        }
+        // Load the attendance data
+        loadClassAttendance();
+      } else if (target.classList.contains('delete-attendance')) {
+        deleteAttendance(classId, date);
       }
     });
   }
@@ -948,5 +1031,267 @@ window.api.receive('studentsInClassResponse', (response) => {
     console.log(`Students in class ${classId}:`, students);
   } else {
     alert(`No students enrolled in this class.`);
+  }
+}); 
+
+// ATTENDANCE FUNCTIONS
+// Load attendance data
+function loadAttendanceData() {
+  // Load classes for the dropdown
+  window.api.send('getClasses');
+  
+  // Load recent attendance history
+  window.api.send('getAttendance');
+  
+  // Hide attendance container until a class is selected
+  if (attendanceContainer) {
+    attendanceContainer.classList.add('d-none');
+  }
+}
+
+// Load class attendance for a specific date
+function loadClassAttendance() {
+  const classId = attendanceClassSelect.value;
+  const date = attendanceDateInput.value;
+  
+  if (!classId) {
+    alert('Please select a class');
+    return;
+  }
+  
+  if (!date) {
+    alert('Please select a date');
+    return;
+  }
+  
+  // Show loading indicator
+  attendanceTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
+  
+  // Get students in the selected class
+  window.api.send('getStudentsInClass', classId);
+  
+  // Get attendance record for this class and date if it exists
+  window.api.send('getAttendanceByClassAndDate', { classId, date });
+  
+  // Show the attendance container
+  attendanceContainer.classList.remove('d-none');
+  
+  // Update the title
+  const selectedClass = classesList.find(c => c.id === classId);
+  if (selectedClass) {
+    attendanceClassName.textContent = selectedClass.name;
+  }
+  
+  // Format date for display
+  const displayDate = new Date(date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  attendanceDateDisplay.textContent = displayDate;
+}
+
+// Handle students in class response
+window.api.receive('studentsInClassResponse', (response) => {
+  const { classId, students } = response;
+  
+  // Store students list
+  studentsList = students;
+  
+  // If we have attendance data already, use it to populate the table
+  if (currentAttendance && currentAttendance.length > 0) {
+    populateAttendanceTable(currentAttendance[0]);
+  } else {
+    // Otherwise create a new attendance record
+    createNewAttendanceRecord(classId, attendanceDateInput.value, students);
+  }
+});
+
+// Handle attendance by class and date response
+window.api.receive('attendanceByClassAndDateData', (response) => {
+  const { classId, date, attendance } = response;
+  
+  // Store current attendance
+  currentAttendance = attendance;
+  
+  // If attendance record exists, populate the table
+  if (attendance && attendance.length > 0) {
+    populateAttendanceTable(attendance[0]);
+  } else {
+    // If no attendance record exists and we have students, create a new one
+    if (studentsList.length > 0) {
+      createNewAttendanceRecord(classId, date, studentsList);
+    }
+  }
+});
+
+// Populate attendance table with data
+function populateAttendanceTable(attendanceRecord) {
+  // Clear the table
+  attendanceTableBody.innerHTML = '';
+  
+  if (!attendanceRecord.students || attendanceRecord.students.length === 0) {
+    attendanceTableBody.innerHTML = '<tr><td colspan="4" class="text-center">No students in this class</td></tr>';
+    return;
+  }
+  
+  // Add each student to the table
+  attendanceRecord.students.forEach(student => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${student.studentId}</td>
+      <td>${student.name}</td>
+      <td>
+        <select class="form-select attendance-status" data-student-id="${student.studentId}">
+          <option value="present" ${student.status === 'present' ? 'selected' : ''}>Present</option>
+          <option value="absent" ${student.status === 'absent' ? 'selected' : ''}>Absent</option>
+          <option value="late" ${student.status === 'late' ? 'selected' : ''}>Late</option>
+          <option value="excused" ${student.status === 'excused' ? 'selected' : ''}>Excused</option>
+        </select>
+      </td>
+      <td>
+        <input type="text" class="form-control attendance-notes" data-student-id="${student.studentId}" value="${student.notes || ''}">
+      </td>
+    `;
+    attendanceTableBody.appendChild(row);
+  });
+}
+
+// Create a new attendance record
+function createNewAttendanceRecord(classId, date, students) {
+  // Create a new attendance record with all students marked as present by default
+  const studentAttendance = students.map(student => ({
+    studentId: student.id,
+    name: student.name,
+    status: 'present',
+    notes: ''
+  }));
+  
+  // Create the attendance object
+  currentAttendance = [{
+    classId,
+    date,
+    students: studentAttendance
+  }];
+  
+  // Populate the table
+  populateAttendanceTable(currentAttendance[0]);
+}
+
+// Save attendance
+function saveAttendance() {
+  if (!currentAttendance || currentAttendance.length === 0) {
+    alert('No attendance data to save');
+    return;
+  }
+  
+  const classId = attendanceClassSelect.value;
+  const date = attendanceDateInput.value;
+  
+  // Get all attendance statuses and notes
+  const statusSelects = document.querySelectorAll('.attendance-status');
+  const notesInputs = document.querySelectorAll('.attendance-notes');
+  
+  // Update the attendance object with current values
+  statusSelects.forEach(select => {
+    const studentId = select.getAttribute('data-student-id');
+    const studentIndex = currentAttendance[0].students.findIndex(s => s.studentId === studentId);
+    
+    if (studentIndex !== -1) {
+      currentAttendance[0].students[studentIndex].status = select.value;
+    }
+  });
+  
+  notesInputs.forEach(input => {
+    const studentId = input.getAttribute('data-student-id');
+    const studentIndex = currentAttendance[0].students.findIndex(s => s.studentId === studentId);
+    
+    if (studentIndex !== -1) {
+      currentAttendance[0].students[studentIndex].notes = input.value;
+    }
+  });
+  
+  // Send the attendance data to the main process
+  window.api.send('saveAttendance', currentAttendance[0]);
+}
+
+// Handle save attendance response
+window.api.receive('saveAttendanceResponse', (response) => {
+  if (response.success) {
+    alert('Attendance saved successfully');
+    // Reload attendance history
+    window.api.send('getAttendance');
+  } else {
+    alert(`Error saving attendance: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle all attendance data response
+window.api.receive('attendanceData', (attendance) => {
+  // Clear the history table
+  attendanceHistoryBody.innerHTML = '';
+  
+  if (attendance.length === 0) {
+    attendanceHistoryBody.innerHTML = '<tr><td colspan="5" class="text-center">No attendance records found</td></tr>';
+    return;
+  }
+  
+  // Sort attendance by date (newest first)
+  attendance.sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  // Show only the 10 most recent records
+  const recentAttendance = attendance.slice(0, 10);
+  
+  // Add each record to the history table
+  recentAttendance.forEach(record => {
+    // Find class name
+    let className = 'Unknown Class';
+    const classItem = classesList.find(c => c.id === record.classId);
+    if (classItem) {
+      className = classItem.name;
+    }
+    
+    // Count present and absent students
+    const presentCount = record.students.filter(s => s.status === 'present').length;
+    const absentCount = record.students.filter(s => s.status === 'absent').length;
+    
+    // Format date for display
+    const displayDate = new Date(record.date).toLocaleDateString();
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${displayDate}</td>
+      <td>${className}</td>
+      <td>${presentCount}</td>
+      <td>${absentCount}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary view-attendance" data-class-id="${record.classId}" data-date="${record.date}">
+          <i class="bi bi-eye"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger delete-attendance" data-class-id="${record.classId}" data-date="${record.date}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    attendanceHistoryBody.appendChild(row);
+  });
+});
+
+// Delete attendance record
+function deleteAttendance(classId, date) {
+  if (confirm('Are you sure you want to delete this attendance record?')) {
+    window.api.send('deleteAttendance', { classId, date });
+  }
+}
+
+// Handle delete attendance response
+window.api.receive('deleteAttendanceResponse', (response) => {
+  if (response.success) {
+    alert('Attendance record deleted successfully');
+    // Reload attendance history
+    window.api.send('getAttendance');
+  } else {
+    alert(`Error deleting attendance record: ${response.error || 'Unknown error'}`);
   }
 }); 

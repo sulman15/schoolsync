@@ -274,6 +274,118 @@ const classesDb = {
   }
 };
 
+// Database CRUD operations for Attendance
+const attendanceDb = {
+  // Get all attendance records
+  getAll: () => {
+    return readDbFile(dbFiles.attendance);
+  },
+  
+  // Get attendance records by date
+  getByDate: (date) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    return attendance.filter(record => record.date === date);
+  },
+  
+  // Get attendance records by class
+  getByClass: (classId) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    return attendance.filter(record => record.classId === classId);
+  },
+  
+  // Get attendance records by student
+  getByStudent: (studentId) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    return attendance.filter(record => record.studentId === studentId);
+  },
+  
+  // Get attendance records by class and date
+  getByClassAndDate: (classId, date) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    return attendance.filter(record => record.classId === classId && record.date === date);
+  },
+  
+  // Create attendance records for a class on a specific date
+  createClassAttendance: (classAttendance) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    
+    // Check if attendance record for this class and date already exists
+    const existingIndex = attendance.findIndex(
+      record => record.classId === classAttendance.classId && record.date === classAttendance.date
+    );
+    
+    if (existingIndex !== -1) {
+      // Update existing record
+      attendance[existingIndex] = {
+        ...attendance[existingIndex],
+        ...classAttendance,
+        updated_at: new Date().toISOString()
+      };
+    } else {
+      // Add new record
+      attendance.push({
+        ...classAttendance,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+    
+    if (writeDbFile(dbFiles.attendance, attendance)) {
+      return { success: true, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  },
+  
+  // Update student attendance status
+  updateStudentAttendance: (classId, date, studentId, status) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    
+    // Find the attendance record for this class and date
+    const recordIndex = attendance.findIndex(
+      record => record.classId === classId && record.date === date
+    );
+    
+    if (recordIndex === -1) {
+      return { success: false, message: 'Attendance record not found' };
+    }
+    
+    // Find the student in the attendance record
+    const studentIndex = attendance[recordIndex].students.findIndex(
+      student => student.studentId === studentId
+    );
+    
+    if (studentIndex === -1) {
+      return { success: false, message: 'Student not found in attendance record' };
+    }
+    
+    // Update the student's attendance status
+    attendance[recordIndex].students[studentIndex].status = status;
+    attendance[recordIndex].updated_at = new Date().toISOString();
+    
+    if (writeDbFile(dbFiles.attendance, attendance)) {
+      return { success: true, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  },
+  
+  // Delete attendance record for a class on a specific date
+  deleteClassAttendance: (classId, date) => {
+    const attendance = readDbFile(dbFiles.attendance);
+    const initialLength = attendance.length;
+    const filteredAttendance = attendance.filter(
+      record => !(record.classId === classId && record.date === date)
+    );
+    
+    if (filteredAttendance.length < initialLength) {
+      if (writeDbFile(dbFiles.attendance, filteredAttendance)) {
+        return { success: true, changes: 1 };
+      }
+    }
+    
+    return { success: false, changes: 0 };
+  }
+};
+
 // User authentication operations
 const usersDb = {
   // Find user by username and password
@@ -299,6 +411,7 @@ module.exports = {
   students: studentsDb,
   teachers: teachersDb,
   classes: classesDb,
+  attendance: attendanceDb,
   users: usersDb,
   
   // Close function (no-op for file-based storage)

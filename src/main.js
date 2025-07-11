@@ -362,6 +362,133 @@ ipcMain.on('getStudentsInClass', (event, classId) => {
   }
 });
 
+// ATTENDANCE OPERATIONS
+// Handle get all attendance records
+ipcMain.on('getAttendance', (event) => {
+  try {
+    const attendance = database.attendance.getAll();
+    event.sender.send('attendanceData', attendance);
+  } catch (error) {
+    console.error('Error fetching attendance records:', error);
+    event.sender.send('attendanceData', []);
+  }
+});
+
+// Handle get attendance by class
+ipcMain.on('getAttendanceByClass', (event, classId) => {
+  try {
+    const attendance = database.attendance.getByClass(classId);
+    event.sender.send('attendanceByClassData', {
+      classId,
+      attendance
+    });
+  } catch (error) {
+    console.error('Error fetching attendance by class:', error);
+    event.sender.send('attendanceByClassData', {
+      classId,
+      attendance: []
+    });
+  }
+});
+
+// Handle get attendance by date
+ipcMain.on('getAttendanceByDate', (event, date) => {
+  try {
+    const attendance = database.attendance.getByDate(date);
+    event.sender.send('attendanceByDateData', {
+      date,
+      attendance
+    });
+  } catch (error) {
+    console.error('Error fetching attendance by date:', error);
+    event.sender.send('attendanceByDateData', {
+      date,
+      attendance: []
+    });
+  }
+});
+
+// Handle get attendance by class and date
+ipcMain.on('getAttendanceByClassAndDate', (event, { classId, date }) => {
+  try {
+    const attendance = database.attendance.getByClassAndDate(classId, date);
+    event.sender.send('attendanceByClassAndDateData', {
+      classId,
+      date,
+      attendance
+    });
+  } catch (error) {
+    console.error('Error fetching attendance by class and date:', error);
+    event.sender.send('attendanceByClassAndDateData', {
+      classId,
+      date,
+      attendance: []
+    });
+  }
+});
+
+// Handle save attendance
+ipcMain.on('saveAttendance', (event, attendanceData) => {
+  try {
+    const result = database.attendance.createClassAttendance(attendanceData);
+    event.sender.send('saveAttendanceResponse', { 
+      success: result.success,
+      classId: attendanceData.classId,
+      date: attendanceData.date
+    });
+  } catch (error) {
+    console.error('Error saving attendance:', error);
+    event.sender.send('saveAttendanceResponse', { 
+      success: false, 
+      error: error.message,
+      classId: attendanceData.classId,
+      date: attendanceData.date
+    });
+  }
+});
+
+// Handle update student attendance
+ipcMain.on('updateStudentAttendance', (event, { classId, date, studentId, status }) => {
+  try {
+    const result = database.attendance.updateStudentAttendance(classId, date, studentId, status);
+    event.sender.send('updateStudentAttendanceResponse', { 
+      success: result.success,
+      classId,
+      date,
+      studentId
+    });
+  } catch (error) {
+    console.error('Error updating student attendance:', error);
+    event.sender.send('updateStudentAttendanceResponse', { 
+      success: false, 
+      error: error.message,
+      classId,
+      date,
+      studentId
+    });
+  }
+});
+
+// Handle delete attendance
+ipcMain.on('deleteAttendance', (event, { classId, date }) => {
+  try {
+    const result = database.attendance.deleteClassAttendance(classId, date);
+    event.sender.send('deleteAttendanceResponse', { 
+      success: result.success,
+      classId,
+      date
+    });
+  } catch (error) {
+    console.error('Error deleting attendance:', error);
+    event.sender.send('deleteAttendanceResponse', { 
+      success: false, 
+      error: error.message,
+      classId,
+      date
+    });
+  }
+});
+
 // Clean up resources when app is about to quit
 app.on('before-quit', () => {
   // Close the database connection (no-op for JSON files)
