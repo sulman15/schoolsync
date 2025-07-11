@@ -30,7 +30,8 @@ const dbFiles = {
   classes: path.join(userDataPath, 'classes.json'),
   users: path.join(userDataPath, 'users.json'),
   attendance: path.join(userDataPath, 'attendance.json'),
-  grades: path.join(userDataPath, 'grades.json')
+  grades: path.join(userDataPath, 'grades.json'),
+  settings: path.join(userDataPath, 'settings.json')
 };
 
 // Initialize database files if they don't exist
@@ -78,6 +79,28 @@ function initializeDatabase() {
   // Initialize grades.json
   if (!fs.existsSync(dbFiles.grades)) {
     fs.writeFileSync(dbFiles.grades, JSON.stringify([], null, 2));
+  }
+  
+  // Initialize settings.json
+  if (!fs.existsSync(dbFiles.settings)) {
+    const defaultSettings = {
+      schoolInfo: {
+        name: 'SchoolSync Academy',
+        address: '',
+        phone: '',
+        email: '',
+        website: '',
+        principal: ''
+      },
+      preferences: {
+        theme: 'light',
+        dateFormat: 'MM/DD/YYYY',
+        language: 'en',
+        autoBackup: false
+      }
+    };
+    fs.writeFileSync(dbFiles.settings, JSON.stringify(defaultSettings, null, 2));
+    console.log('Default settings created');
   }
 }
 
@@ -596,6 +619,196 @@ const usersDb = {
       users[index].last_login = new Date().toISOString();
       writeDbFile(dbFiles.users, users);
     }
+  },
+  
+  // Update user information
+  update: (id, userData) => {
+    const users = readDbFile(dbFiles.users);
+    const index = users.findIndex(user => user.id === id);
+    
+    if (index !== -1) {
+      // Update user data
+      users[index] = {
+        ...users[index],
+        ...userData,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (writeDbFile(dbFiles.users, users)) {
+        return { success: true, changes: 1 };
+      }
+    }
+    
+    return { success: false, changes: 0 };
+  }
+};
+
+// Settings CRUD operations
+const settingsDb = {
+  // Get all settings
+  getAll: () => {
+    return readDbFile(dbFiles.settings);
+  },
+  
+  // Get a specific setting
+  get: (key) => {
+    const settings = readDbFile(dbFiles.settings);
+    return settings[key];
+  },
+  
+  // Update a setting
+  update: (key, value) => {
+    const settings = readDbFile(dbFiles.settings);
+    settings[key] = value;
+    if (writeDbFile(dbFiles.settings, settings)) {
+      return { success: true, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  },
+  
+  // Save all settings
+  save: (settings) => {
+    if (writeDbFile(dbFiles.settings, settings)) {
+      return { success: true, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  }
+};
+
+// Backup and restore operations
+const backupDb = {
+  // Create a backup of all data
+  create: () => {
+    try {
+      // Create backup directory if it doesn't exist
+      const backupDir = path.join(userDataPath, 'backups');
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+      
+      // Create timestamp for backup file name
+      const timestamp = new Date().toISOString().replace(/[:.-]/g, '_').replace(/T/g, '-').split('Z')[0];
+      const backupFile = path.join(backupDir, `schoolsync_backup_${timestamp}.json`);
+      
+      // Collect all data
+      const backup = {
+        students: readDbFile(dbFiles.students),
+        teachers: readDbFile(dbFiles.teachers),
+        classes: readDbFile(dbFiles.classes),
+        attendance: readDbFile(dbFiles.attendance),
+        grades: readDbFile(dbFiles.grades),
+        settings: readDbFile(dbFiles.settings),
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      };
+      
+      // Write backup file
+      fs.writeFileSync(backupFile, JSON.stringify(backup, null, 2));
+      
+      return { success: true, path: backupFile };
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      return { success: false, error: error.message };
+    }
+  },
+  
+  // Restore data from a backup file
+  restore: (backupFile) => {
+    try {
+      // Check if backup file exists
+      if (!fs.existsSync(backupFile)) {
+        return { success: false, error: 'Backup file not found' };
+      }
+      
+      // Read backup file
+      const backupData = fs.readFileSync(backupFile, 'utf8');
+      const backup = JSON.parse(backupData);
+      
+      // Validate backup data
+      if (!backup.students || !backup.teachers || !backup.classes || 
+          !backup.attendance || !backup.grades || !backup.settings) {
+        return { success: false, error: 'Invalid backup file format' };
+      }
+      
+      // Restore each data file
+      writeDbFile(dbFiles.students, backup.students);
+      writeDbFile(dbFiles.teachers, backup.teachers);
+      writeDbFile(dbFiles.classes, backup.classes);
+      writeDbFile(dbFiles.attendance, backup.attendance);
+      writeDbFile(dbFiles.grades, backup.grades);
+      writeDbFile(dbFiles.settings, backup.settings);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error restoring backup:', error);
+      return { success: false, error: error.message };
+    }
+  },
+  
+  // Reset all data to default
+  reset: () => {
+    try {
+      // Reset students
+      writeDbFile(dbFiles.students, []);
+      
+      // Reset teachers
+      writeDbFile(dbFiles.teachers, []);
+      
+      // Reset classes
+      writeDbFile(dbFiles.classes, []);
+      
+      // Reset attendance
+      writeDbFile(dbFiles.attendance, []);
+      
+      // Reset grades
+      writeDbFile(dbFiles.grades, []);
+      
+      // Reset settings to default
+      const defaultSettings = {
+        schoolInfo: {
+          name: 'SchoolSync Academy',
+          address: '',
+          phone: '',
+          email: '',
+          website: '',
+          principal: ''
+        },
+        preferences: {
+          theme: 'light',
+          dateFormat: 'MM/DD/YYYY',
+          language: 'en',
+          autoBackup: false
+        }
+      };
+      writeDbFile(dbFiles.settings, defaultSettings);
+      
+      // Reset users except admin
+      const users = readDbFile(dbFiles.users);
+      const adminUser = users.find(user => user.username === 'admin');
+      if (adminUser) {
+        writeDbFile(dbFiles.users, [adminUser]);
+      } else {
+        // If admin user is not found, create a new one
+        const defaultUsers = [
+          {
+            id: 1,
+            username: 'admin',
+            password: 'admin123',
+            role: 'administrator',
+            name: 'System Administrator',
+            email: 'admin@schoolsync.com',
+            created_at: new Date().toISOString(),
+            last_login: null
+          }
+        ];
+        writeDbFile(dbFiles.users, defaultUsers);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -607,6 +820,8 @@ module.exports = {
   attendance: attendanceDb,
   grades: gradesDb,
   users: usersDb,
+  settings: settingsDb,
+  backup: backupDb,
   
   // Close function (no-op for file-based storage)
   close: () => {

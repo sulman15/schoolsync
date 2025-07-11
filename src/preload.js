@@ -37,7 +37,14 @@ contextBridge.exposeInMainWorld(
         'saveAssignmentGrades',
         'updateStudentGrade',
         'deleteAssignment',
-        'getStudentClassGrade'
+        'getStudentClassGrade',
+        'getSettings',
+        'saveSettings',
+        'getCurrentUser',
+        'updateUser',
+        'createBackup',
+        'restoreBackup',
+        'resetData'
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
@@ -75,7 +82,14 @@ contextBridge.exposeInMainWorld(
         'saveAssignmentGradesResponse',
         'updateStudentGradeResponse',
         'deleteAssignmentResponse',
-        'studentClassGradeData'
+        'studentClassGradeData',
+        'settingsData',
+        'saveSettingsResponse',
+        'currentUserData',
+        'updateUserResponse',
+        'backupResponse',
+        'restoreResponse',
+        'resetResponse'
       ];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender` 

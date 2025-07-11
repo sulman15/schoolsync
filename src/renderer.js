@@ -32,6 +32,14 @@ const studentReportContainer = document.getElementById('student-report-container
 const reportStudentName = document.getElementById('report-student-name');
 const reportOverallGrade = document.getElementById('report-overall-grade');
 const studentGradesTableBody = document.getElementById('student-grades-table-body');
+const settingsTabLinks = document.querySelectorAll('.list-group-item[data-settings-tab]');
+const settingsTabs = document.querySelectorAll('.settings-tab');
+const saveSchoolInfoBtn = document.getElementById('save-school-info-btn');
+const saveUserAccountBtn = document.getElementById('save-user-account-btn');
+const savePreferencesBtn = document.getElementById('save-preferences-btn');
+const createBackupBtn = document.getElementById('create-backup-btn');
+const restoreBackupBtn = document.getElementById('restore-backup-btn');
+const resetDataBtn = document.getElementById('reset-data-btn');
 
 // Store the currently editing IDs
 let currentEditingStudentId = null;
@@ -51,6 +59,10 @@ let currentAttendance = null;
 let currentAssignments = [];
 // Store current assignment grades data
 let currentAssignmentGrades = null;
+// Store current user data
+let currentUser = null;
+// Store current settings
+let currentSettings = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -126,8 +138,9 @@ function setupNavigation() {
         loadAttendanceData();
       } else if (targetPage === 'grades') {
         loadGradesData();
+      } else if (targetPage === 'settings') {
+        loadSettingsData();
       }
-      // Add similar conditions for other pages
     });
   });
 }
@@ -506,6 +519,58 @@ function setupEventListeners() {
   if (loadStudentGradesBtn) {
     loadStudentGradesBtn.addEventListener('click', () => {
       loadStudentGrades();
+    });
+  }
+  
+  // Settings tab navigation
+  if (settingsTabLinks) {
+    settingsTabLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        setupSettingsTabs(link.getAttribute('data-settings-tab'));
+      });
+    });
+  }
+  
+  // Save school info button
+  if (saveSchoolInfoBtn) {
+    saveSchoolInfoBtn.addEventListener('click', () => {
+      saveSchoolInfo();
+    });
+  }
+  
+  // Save user account button
+  if (saveUserAccountBtn) {
+    saveUserAccountBtn.addEventListener('click', () => {
+      saveUserAccount();
+    });
+  }
+  
+  // Save preferences button
+  if (savePreferencesBtn) {
+    savePreferencesBtn.addEventListener('click', () => {
+      saveSystemPreferences();
+    });
+  }
+  
+  // Create backup button
+  if (createBackupBtn) {
+    createBackupBtn.addEventListener('click', () => {
+      createBackup();
+    });
+  }
+  
+  // Restore backup button
+  if (restoreBackupBtn) {
+    restoreBackupBtn.addEventListener('click', () => {
+      restoreBackup();
+    });
+  }
+  
+  // Reset data button
+  if (resetDataBtn) {
+    resetDataBtn.addEventListener('click', () => {
+      resetData();
     });
   }
 }
@@ -1873,4 +1938,268 @@ window.api.receive('studentClassGradeData', (response) => {
     `;
     studentGradesTableBody.appendChild(row);
   });
+}); 
+
+// SETTINGS FUNCTIONS
+// Load settings data
+function loadSettingsData() {
+  // Request settings data from main process
+  window.api.send('getSettings');
+  
+  // Request current user data
+  window.api.send('getCurrentUser');
+}
+
+// Handle received settings data
+window.api.receive('settingsData', (settings) => {
+  // Store current settings
+  currentSettings = settings || {};
+  
+  // Populate school info form
+  if (settings && settings.schoolInfo) {
+    document.getElementById('school-name').value = settings.schoolInfo.name || '';
+    document.getElementById('school-address').value = settings.schoolInfo.address || '';
+    document.getElementById('school-phone').value = settings.schoolInfo.phone || '';
+    document.getElementById('school-email').value = settings.schoolInfo.email || '';
+    document.getElementById('school-website').value = settings.schoolInfo.website || '';
+    document.getElementById('school-principal').value = settings.schoolInfo.principal || '';
+  }
+  
+  // Populate system preferences
+  if (settings && settings.preferences) {
+    // Set theme
+    if (settings.preferences.theme === 'dark') {
+      document.getElementById('theme-dark').checked = true;
+      document.body.classList.add('dark-mode');
+    } else {
+      document.getElementById('theme-light').checked = true;
+      document.body.classList.remove('dark-mode');
+    }
+    
+    // Set date format
+    if (settings.preferences.dateFormat) {
+      document.getElementById('date-format').value = settings.preferences.dateFormat;
+    }
+    
+    // Set language
+    if (settings.preferences.language) {
+      document.getElementById('language').value = settings.preferences.language;
+    }
+    
+    // Set auto backup
+    document.getElementById('auto-backup').checked = settings.preferences.autoBackup || false;
+  }
+});
+
+// Handle received current user data
+window.api.receive('currentUserData', (user) => {
+  // Store current user
+  currentUser = user;
+  
+  // Populate user account form
+  if (user) {
+    document.getElementById('user-name').value = user.name || '';
+    document.getElementById('user-email').value = user.email || '';
+    document.getElementById('user-username').value = user.username || '';
+  }
+});
+
+// Setup settings tabs
+function setupSettingsTabs(tabId) {
+  // Remove active class from all tab links
+  settingsTabLinks.forEach(link => {
+    link.classList.remove('active');
+  });
+  
+  // Add active class to the clicked tab link
+  const activeTabLink = document.querySelector(`.list-group-item[data-settings-tab="${tabId}"]`);
+  if (activeTabLink) {
+    activeTabLink.classList.add('active');
+  }
+  
+  // Hide all tab content
+  settingsTabs.forEach(tab => {
+    tab.classList.remove('active');
+  });
+  
+  // Show the selected tab content
+  const activeTab = document.getElementById(`${tabId}-settings`);
+  if (activeTab) {
+    activeTab.classList.add('active');
+  }
+}
+
+// Save school information
+function saveSchoolInfo() {
+  const schoolInfo = {
+    name: document.getElementById('school-name').value,
+    address: document.getElementById('school-address').value,
+    phone: document.getElementById('school-phone').value,
+    email: document.getElementById('school-email').value,
+    website: document.getElementById('school-website').value,
+    principal: document.getElementById('school-principal').value
+  };
+  
+  // Update settings object
+  if (!currentSettings) {
+    currentSettings = {};
+  }
+  
+  currentSettings.schoolInfo = schoolInfo;
+  
+  // Send to main process
+  window.api.send('saveSettings', currentSettings);
+}
+
+// Save user account
+function saveUserAccount() {
+  const name = document.getElementById('user-name').value;
+  const email = document.getElementById('user-email').value;
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  
+  // Validate form
+  if (!name) {
+    alert('Please enter your name');
+    return;
+  }
+  
+  // Check if changing password
+  if (currentPassword || newPassword || confirmPassword) {
+    if (!currentPassword) {
+      alert('Please enter your current password');
+      return;
+    }
+    
+    if (!newPassword) {
+      alert('Please enter a new password');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      alert('New passwords do not match');
+      return;
+    }
+  }
+  
+  // Prepare user data
+  const userData = {
+    id: currentUser.id,
+    name,
+    email,
+    currentPassword,
+    newPassword
+  };
+  
+  // Send to main process
+  window.api.send('updateUser', userData);
+}
+
+// Save system preferences
+function saveSystemPreferences() {
+  const theme = document.querySelector('input[name="theme"]:checked').value;
+  const dateFormat = document.getElementById('date-format').value;
+  const language = document.getElementById('language').value;
+  const autoBackup = document.getElementById('auto-backup').checked;
+  
+  // Update settings object
+  if (!currentSettings) {
+    currentSettings = {};
+  }
+  
+  currentSettings.preferences = {
+    theme,
+    dateFormat,
+    language,
+    autoBackup
+  };
+  
+  // Apply theme immediately
+  if (theme === 'dark') {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  
+  // Send to main process
+  window.api.send('saveSettings', currentSettings);
+}
+
+// Create backup
+function createBackup() {
+  window.api.send('createBackup');
+}
+
+// Restore backup
+function restoreBackup() {
+  const fileInput = document.getElementById('restore-file');
+  
+  if (!fileInput.files || fileInput.files.length === 0) {
+    alert('Please select a backup file');
+    return;
+  }
+  
+  if (confirm('Are you sure you want to restore data from backup? This will overwrite your current data.')) {
+    const filePath = fileInput.files[0].path;
+    window.api.send('restoreBackup', filePath);
+  }
+}
+
+// Reset data
+function resetData() {
+  if (confirm('WARNING: This will delete ALL data and reset the application to default settings. This action cannot be undone. Are you sure you want to continue?')) {
+    if (confirm('Are you REALLY sure? All your data will be permanently deleted.')) {
+      window.api.send('resetData');
+    }
+  }
+}
+
+// Handle settings response
+window.api.receive('saveSettingsResponse', (response) => {
+  if (response.success) {
+    alert('Settings saved successfully');
+  } else {
+    alert(`Error saving settings: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle update user response
+window.api.receive('updateUserResponse', (response) => {
+  if (response.success) {
+    alert('User account updated successfully');
+    // Clear password fields
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+  } else {
+    alert(`Error updating user account: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle backup response
+window.api.receive('backupResponse', (response) => {
+  if (response.success) {
+    alert(`Backup created successfully at: ${response.path}`);
+  } else {
+    alert(`Error creating backup: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle restore response
+window.api.receive('restoreResponse', (response) => {
+  if (response.success) {
+    alert('Data restored successfully. The application will now restart.');
+  } else {
+    alert(`Error restoring data: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle reset response
+window.api.receive('resetResponse', (response) => {
+  if (response.success) {
+    alert('All data has been reset. The application will now restart.');
+  } else {
+    alert(`Error resetting data: ${response.error || 'Unknown error'}`);
+  }
 }); 

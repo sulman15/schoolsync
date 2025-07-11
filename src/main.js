@@ -670,6 +670,183 @@ ipcMain.on('getStudentClassGrade', (event, { classId, studentId }) => {
   }
 });
 
+// SETTINGS OPERATIONS
+// Handle get settings request
+ipcMain.on('getSettings', (event) => {
+  try {
+    const settings = database.settings.getAll();
+    event.sender.send('settingsData', settings);
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    event.sender.send('settingsData', null);
+  }
+});
+
+// Handle save settings request
+ipcMain.on('saveSettings', (event, settings) => {
+  try {
+    const result = database.settings.save(settings);
+    event.sender.send('saveSettingsResponse', { 
+      success: result.success
+    });
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    event.sender.send('saveSettingsResponse', { 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
+// Handle get current user request
+ipcMain.on('getCurrentUser', (event) => {
+  try {
+    // Return the current authenticated user (without password)
+    if (currentUser) {
+      const userCopy = { ...currentUser };
+      delete userCopy.password;
+      event.sender.send('currentUserData', userCopy);
+    } else {
+      event.sender.send('currentUserData', null);
+    }
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    event.sender.send('currentUserData', null);
+  }
+});
+
+// Handle update user request
+ipcMain.on('updateUser', (event, userData) => {
+  try {
+    // Check if changing password
+    if (userData.currentPassword && userData.newPassword) {
+      // Verify current password
+      const user = database.users.authenticate(currentUser.username, userData.currentPassword);
+      
+      if (!user) {
+        event.sender.send('updateUserResponse', { 
+          success: false, 
+          error: 'Current password is incorrect'
+        });
+        return;
+      }
+      
+      // Update user with new password
+      const updatedUser = {
+        ...currentUser,
+        name: userData.name,
+        email: userData.email,
+        password: userData.newPassword,
+        updated_at: new Date().toISOString()
+      };
+      
+      const result = database.users.update(updatedUser.id, updatedUser);
+      
+      if (result.success) {
+        // Update current user in memory
+        currentUser = updatedUser;
+        
+        event.sender.send('updateUserResponse', { 
+          success: true
+        });
+      } else {
+        event.sender.send('updateUserResponse', { 
+          success: false, 
+          error: 'Failed to update user'
+        });
+      }
+    } else {
+      // Update user without changing password
+      const updatedUser = {
+        ...currentUser,
+        name: userData.name,
+        email: userData.email,
+        updated_at: new Date().toISOString()
+      };
+      
+      const result = database.users.update(updatedUser.id, updatedUser);
+      
+      if (result.success) {
+        // Update current user in memory
+        currentUser = updatedUser;
+        
+        event.sender.send('updateUserResponse', { 
+          success: true
+        });
+      } else {
+        event.sender.send('updateUserResponse', { 
+          success: false, 
+          error: 'Failed to update user'
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error updating user:', error);
+    event.sender.send('updateUserResponse', { 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
+// Handle create backup request
+ipcMain.on('createBackup', (event) => {
+  try {
+    const result = database.backup.create();
+    event.sender.send('backupResponse', result);
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    event.sender.send('backupResponse', { 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
+// Handle restore backup request
+ipcMain.on('restoreBackup', (event, backupFile) => {
+  try {
+    const result = database.backup.restore(backupFile);
+    event.sender.send('restoreResponse', result);
+    
+    // Restart the app if successful
+    if (result.success) {
+      setTimeout(() => {
+        app.relaunch();
+        app.exit();
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error restoring backup:', error);
+    event.sender.send('restoreResponse', { 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
+// Handle reset data request
+ipcMain.on('resetData', (event) => {
+  try {
+    const result = database.backup.reset();
+    event.sender.send('resetResponse', result);
+    
+    // Restart the app if successful
+    if (result.success) {
+      setTimeout(() => {
+        app.relaunch();
+        app.exit();
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error resetting data:', error);
+    event.sender.send('resetResponse', { 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
 // Clean up resources when app is about to quit
 app.on('before-quit', () => {
   // Close the database connection (no-op for JSON files)

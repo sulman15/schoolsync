@@ -354,6 +354,199 @@
             </div>
           </div>
 
+          <div id="settings" class="content-page">
+            <h2>Settings</h2>
+            
+            <div class="row">
+              <div class="col-md-3 mb-4">
+                <!-- Settings Navigation -->
+                <div class="list-group">
+                  <a href="#" class="list-group-item list-group-item-action active" data-settings-tab="school-info">
+                    School Information
+                  </a>
+                  <a href="#" class="list-group-item list-group-item-action" data-settings-tab="user-account">
+                    User Account
+                  </a>
+                  <a href="#" class="list-group-item list-group-item-action" data-settings-tab="system-preferences">
+                    System Preferences
+                  </a>
+                  <a href="#" class="list-group-item list-group-item-action" data-settings-tab="backup-restore">
+                    Backup & Restore
+                  </a>
+                </div>
+              </div>
+              
+              <div class="col-md-9">
+                <!-- School Information Settings -->
+                <div id="school-info-settings" class="settings-tab active">
+                  <div class="card">
+                    <div class="card-header">
+                      <h5 class="mb-0">School Information</h5>
+                    </div>
+                    <div class="card-body">
+                      <form id="school-info-form">
+                        <div class="mb-3">
+                          <label for="school-name" class="form-label">School Name</label>
+                          <input type="text" class="form-control" id="school-name">
+                        </div>
+                        <div class="mb-3">
+                          <label for="school-address" class="form-label">Address</label>
+                          <textarea class="form-control" id="school-address" rows="3"></textarea>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6 mb-3">
+                            <label for="school-phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="school-phone">
+                          </div>
+                          <div class="col-md-6 mb-3">
+                            <label for="school-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="school-email">
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label for="school-website" class="form-label">Website</label>
+                          <input type="url" class="form-control" id="school-website">
+                        </div>
+                        <div class="mb-3">
+                          <label for="school-principal" class="form-label">Principal Name</label>
+                          <input type="text" class="form-control" id="school-principal">
+                        </div>
+                        <button type="button" class="btn btn-primary" id="save-school-info-btn">Save Information</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- User Account Settings -->
+                <div id="user-account-settings" class="settings-tab">
+                  <div class="card">
+                    <div class="card-header">
+                      <h5 class="mb-0">User Account</h5>
+                    </div>
+                    <div class="card-body">
+                      <form id="user-account-form">
+                        <div class="mb-3">
+                          <label for="user-name" class="form-label">Name</label>
+                          <input type="text" class="form-control" id="user-name">
+                        </div>
+                        <div class="mb-3">
+                          <label for="user-email" class="form-label">Email</label>
+                          <input type="email" class="form-control" id="user-email">
+                        </div>
+                        <div class="mb-3">
+                          <label for="user-username" class="form-label">Username</label>
+                          <input type="text" class="form-control" id="user-username" readonly>
+                        </div>
+                        <hr>
+                        <h6>Change Password</h6>
+                        <div class="mb-3">
+                          <label for="current-password" class="form-label">Current Password</label>
+                          <input type="password" class="form-control" id="current-password">
+                        </div>
+                        <div class="mb-3">
+                          <label for="new-password" class="form-label">New Password</label>
+                          <input type="password" class="form-control" id="new-password">
+                        </div>
+                        <div class="mb-3">
+                          <label for="confirm-password" class="form-label">Confirm New Password</label>
+                          <input type="password" class="form-control" id="confirm-password">
+                        </div>
+                        <button type="button" class="btn btn-primary" id="save-user-account-btn">Save Changes</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- System Preferences Settings -->
+                <div id="system-preferences-settings" class="settings-tab">
+                  <div class="card">
+                    <div class="card-header">
+                      <h5 class="mb-0">System Preferences</h5>
+                    </div>
+                    <div class="card-body">
+                      <form id="system-preferences-form">
+                        <div class="mb-3">
+                          <label class="form-label">Theme</label>
+                          <div class="form-check">
+                            <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" checked>
+                            <label class="form-check-label" for="theme-light">
+                              Light
+                            </label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark">
+                            <label class="form-check-label" for="theme-dark">
+                              Dark
+                            </label>
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label for="date-format" class="form-label">Date Format</label>
+                          <select class="form-select" id="date-format">
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                          </select>
+                        </div>
+                        <div class="mb-3">
+                          <label for="language" class="form-label">Language</label>
+                          <select class="form-select" id="language">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                          </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                          <input type="checkbox" class="form-check-input" id="auto-backup">
+                          <label class="form-check-label" for="auto-backup">Enable automatic backups</label>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="save-preferences-btn">Save Preferences</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Backup & Restore Settings -->
+                <div id="backup-restore-settings" class="settings-tab">
+                  <div class="card">
+                    <div class="card-header">
+                      <h5 class="mb-0">Backup & Restore</h5>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-4">
+                        <h6>Backup Data</h6>
+                        <p>Create a backup of all your school data.</p>
+                        <button type="button" class="btn btn-primary" id="create-backup-btn">
+                          <i class="bi bi-download"></i> Create Backup
+                        </button>
+                      </div>
+                      <hr>
+                      <div class="mb-4">
+                        <h6>Restore Data</h6>
+                        <p>Restore data from a previous backup file.</p>
+                        <div class="mb-3">
+                          <label for="restore-file" class="form-label">Select Backup File</label>
+                          <input class="form-control" type="file" id="restore-file">
+                        </div>
+                        <button type="button" class="btn btn-warning" id="restore-backup-btn">
+                          <i class="bi bi-upload"></i> Restore Backup
+                        </button>
+                      </div>
+                      <hr>
+                      <div>
+                        <h6>Reset Data</h6>
+                        <p class="text-danger">Warning: This will delete all data and reset the application to default settings.</p>
+                        <button type="button" class="btn btn-danger" id="reset-data-btn">
+                          <i class="bi bi-exclamation-triangle"></i> Reset All Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Other content pages will be added here -->
         </div>
       </div>
