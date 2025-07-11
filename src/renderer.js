@@ -3,6 +3,9 @@ const navLinks = document.querySelectorAll('.nav-link');
 const contentPages = document.querySelectorAll('.content-page');
 const addStudentBtn = document.getElementById('add-student-btn');
 const studentsTableBody = document.getElementById('students-table-body');
+const studentSearchInput = document.getElementById('student-search-input');
+const teacherSearchInput = document.getElementById('teacher-search-input');
+const classSearchInput = document.getElementById('class-search-input');
 const addTeacherBtn = document.getElementById('add-teacher-btn');
 const teachersTableBody = document.getElementById('teachers-table-body');
 const addClassBtn = document.getElementById('add-class-btn');
@@ -42,9 +45,9 @@ const qualificationsTableBody = document.getElementById('qualifications-table-bo
 const createBackupBtn = document.getElementById('create-backup-btn');
 const restoreBackupBtn = document.getElementById('restore-backup-btn');
 const resetDataBtn = document.getElementById('reset-data-btn');
-const studentSearchInput = document.getElementById('student-search-input');
-const teacherSearchInput = document.getElementById('teacher-search-input');
-const classSearchInput = document.getElementById('class-search-input');
+const selectLogoBtn = document.getElementById('select-logo-btn');
+const schoolLogoPreview = document.getElementById('school-logo-preview');
+const appLogo = document.getElementById('app-logo');
 
 // Store the currently editing IDs
 let currentEditingStudentId = null;
@@ -728,6 +731,13 @@ function setupEventListeners() {
   if (resetDataBtn) {
     resetDataBtn.addEventListener('click', () => {
       resetData();
+    });
+  }
+  
+  // Select logo button
+  if (selectLogoBtn) {
+    selectLogoBtn.addEventListener('click', () => {
+      window.api.send('selectLogo');
     });
   }
   
@@ -2162,6 +2172,16 @@ window.api.receive('settingsData', (settings) => {
     document.getElementById('school-email').value = settings.schoolInfo.email || '';
     document.getElementById('school-website').value = settings.schoolInfo.website || '';
     document.getElementById('school-principal').value = settings.schoolInfo.principal || '';
+    
+    // Update logo preview
+    if (settings.schoolInfo.logo && schoolLogoPreview) {
+      schoolLogoPreview.src = settings.schoolInfo.logo;
+    }
+    
+    // Update app logo
+    if (settings.schoolInfo.logo && appLogo) {
+      appLogo.src = settings.schoolInfo.logo;
+    }
   }
   
   // Populate system preferences
@@ -2187,6 +2207,28 @@ window.api.receive('settingsData', (settings) => {
     
     // Set auto backup
     document.getElementById('auto-backup').checked = settings.preferences.autoBackup || false;
+  }
+});
+
+// Handle logo selection response
+window.api.receive('logoSelected', (response) => {
+  if (response.success && response.path) {
+    // Update the logo preview
+    if (schoolLogoPreview) {
+      schoolLogoPreview.src = response.path;
+    }
+    
+    // Update the app logo
+    if (appLogo) {
+      appLogo.src = response.path;
+    }
+    
+    // Update the settings object
+    if (currentSettings && currentSettings.schoolInfo) {
+      currentSettings.schoolInfo.logo = response.path;
+    }
+  } else if (response.error) {
+    alert(`Error selecting logo: ${response.error}`);
   }
 });
 
@@ -2230,21 +2272,34 @@ function setupSettingsTabs(tabId) {
 
 // Save school information
 function saveSchoolInfo() {
-  const schoolInfo = {
-    name: document.getElementById('school-name').value,
-    address: document.getElementById('school-address').value,
-    phone: document.getElementById('school-phone').value,
-    email: document.getElementById('school-email').value,
-    website: document.getElementById('school-website').value,
-    principal: document.getElementById('school-principal').value
-  };
+  // Get form values
+  const name = document.getElementById('school-name').value;
+  const address = document.getElementById('school-address').value;
+  const phone = document.getElementById('school-phone').value;
+  const email = document.getElementById('school-email').value;
+  const website = document.getElementById('school-website').value;
+  const principal = document.getElementById('school-principal').value;
+  
+  // Get logo path from current settings
+  const logo = currentSettings && currentSettings.schoolInfo ? currentSettings.schoolInfo.logo : 'assets/default-logo.png';
   
   // Update settings object
   if (!currentSettings) {
-    currentSettings = {};
+    currentSettings = {
+      schoolInfo: {},
+      preferences: {}
+    };
   }
   
-  currentSettings.schoolInfo = schoolInfo;
+  currentSettings.schoolInfo = {
+    name,
+    address,
+    phone,
+    email,
+    website,
+    principal,
+    logo
+  };
   
   // Send to main process
   window.api.send('saveSettings', currentSettings);

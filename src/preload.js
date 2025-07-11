@@ -48,7 +48,8 @@ contextBridge.exposeInMainWorld(
         'createBackup',
         'restoreBackup',
         'resetData',
-        'showSaveDialog'
+        'showSaveDialog',
+        'selectLogo'
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
@@ -97,7 +98,8 @@ contextBridge.exposeInMainWorld(
         'backupResponse',
         'restoreResponse',
         'resetResponse',
-        'createBackup'
+        'createBackup',
+        'logoSelected'
       ];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender` 

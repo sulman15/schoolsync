@@ -103,7 +103,8 @@ function initializeDatabase() {
         phone: '',
         email: '',
         website: '',
-        principal: ''
+        principal: '',
+        logo: 'assets/default-logo.png'
       },
       preferences: {
         theme: 'light',
@@ -834,7 +835,8 @@ const backupDb = {
           phone: '',
           email: '',
           website: '',
-          principal: ''
+          principal: '',
+          logo: 'assets/default-logo.png'
         },
         preferences: {
           theme: 'light',

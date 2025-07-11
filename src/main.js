@@ -933,6 +933,42 @@ ipcMain.on('resetData', (event) => {
   }
 });
 
+// Handle logo selection dialog
+ipcMain.on('selectLogo', async (event) => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Images', extensions: ['jpg', 'jpeg', 'png'] }
+      ]
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      const sourcePath = result.filePaths[0];
+      const fileName = path.basename(sourcePath);
+      const destDir = path.join(app.getAppPath(), 'src', 'assets');
+      const destPath = path.join(destDir, fileName);
+      
+      // Ensure assets directory exists
+      if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+      }
+      
+      // Copy the file to assets directory
+      fs.copyFileSync(sourcePath, destPath);
+      
+      // Return the relative path to the renderer
+      const relativePath = path.join('assets', fileName).replace(/\\/g, '/');
+      event.sender.send('logoSelected', { success: true, path: relativePath });
+    } else {
+      event.sender.send('logoSelected', { success: false });
+    }
+  } catch (error) {
+    console.error('Error selecting logo:', error);
+    event.sender.send('logoSelected', { success: false, error: error.message });
+  }
+});
+
 // Clean up resources when app is about to quit
 app.on('before-quit', () => {
   // Close the database connection (no-op for JSON files)
