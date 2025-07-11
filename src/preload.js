@@ -13,7 +13,9 @@ contextBridge.exposeInMainWorld(
         'saveStudent', 
         'deleteStudent', 
         'getTeachers', 
+        'getTeacher',
         'saveTeacher', 
+        'deleteTeacher',
         'getClasses', 
         'saveClass'
       ];
@@ -28,7 +30,10 @@ contextBridge.exposeInMainWorld(
         'getStudentResponse', 
         'saveStudentResponse', 
         'deleteStudentResponse', 
-        'teachersData', 
+        'teachersData',
+        'getTeacherResponse',
+        'saveTeacherResponse',
+        'deleteTeacherResponse',
         'classesData'
       ];
       if (validChannels.includes(channel)) {

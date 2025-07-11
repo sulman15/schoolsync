@@ -160,6 +160,60 @@ const studentsDb = {
   }
 };
 
+// Database CRUD operations for Teachers
+const teachersDb = {
+  // Get all teachers
+  getAll: () => {
+    return readDbFile(dbFiles.teachers);
+  },
+  
+  // Get a teacher by ID
+  getById: (id) => {
+    const teachers = readDbFile(dbFiles.teachers);
+    return teachers.find(teacher => teacher.id === id);
+  },
+  
+  // Create a new teacher
+  create: (teacher) => {
+    const teachers = readDbFile(dbFiles.teachers);
+    teachers.push(teacher);
+    if (writeDbFile(dbFiles.teachers, teachers)) {
+      return { id: teacher.id, changes: 1 };
+    }
+    return { id: teacher.id, changes: 0 };
+  },
+  
+  // Update a teacher
+  update: (id, teacherData) => {
+    const teachers = readDbFile(dbFiles.teachers);
+    const index = teachers.findIndex(teacher => teacher.id === id);
+    
+    if (index !== -1) {
+      teachers[index] = { ...teachers[index], ...teacherData, updated_at: new Date().toISOString() };
+      if (writeDbFile(dbFiles.teachers, teachers)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  },
+  
+  // Delete a teacher
+  delete: (id) => {
+    const teachers = readDbFile(dbFiles.teachers);
+    const initialLength = teachers.length;
+    const filteredTeachers = teachers.filter(teacher => teacher.id !== id);
+    
+    if (filteredTeachers.length < initialLength) {
+      if (writeDbFile(dbFiles.teachers, filteredTeachers)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  }
+};
+
 // User authentication operations
 const usersDb = {
   // Find user by username and password
@@ -183,6 +237,7 @@ const usersDb = {
 // Export the database operations
 module.exports = {
   students: studentsDb,
+  teachers: teachersDb,
   users: usersDb,
   
   // Close function (no-op for file-based storage)

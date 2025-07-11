@@ -126,6 +126,7 @@ ipcMain.on('login', (event, data) => {
   }
 });
 
+// STUDENT OPERATIONS
 // Handle student data requests
 ipcMain.on('getStudents', (event) => {
   try {
@@ -194,6 +195,79 @@ ipcMain.on('deleteStudent', (event, studentId) => {
       success: false, 
       error: error.message,
       id: studentId
+    });
+  }
+});
+
+// TEACHER OPERATIONS
+// Handle teacher data requests
+ipcMain.on('getTeachers', (event) => {
+  try {
+    const teachers = database.teachers.getAll();
+    event.sender.send('teachersData', teachers);
+  } catch (error) {
+    console.error('Error fetching teachers:', error);
+    event.sender.send('teachersData', []);
+  }
+});
+
+// Handle get single teacher request
+ipcMain.on('getTeacher', (event, teacherId) => {
+  try {
+    const teacher = database.teachers.getById(teacherId);
+    event.sender.send('getTeacherResponse', teacher);
+  } catch (error) {
+    console.error('Error fetching teacher:', error);
+    event.sender.send('getTeacherResponse', null);
+  }
+});
+
+// Handle teacher creation/update
+ipcMain.on('saveTeacher', (event, teacher) => {
+  try {
+    let result;
+    
+    if (teacher.isNew) {
+      // Generate a new ID for the teacher (format: T001, T002, etc.)
+      const teachers = database.teachers.getAll();
+      const lastId = teachers.length > 0 
+        ? Math.max(...teachers.map(t => parseInt(t.id.substring(1) || '0'))) 
+        : 0;
+      const newId = `T${String(lastId + 1).padStart(3, '0')}`;
+      
+      // Add timestamp
+      teacher.id = newId;
+      teacher.created_at = new Date().toISOString();
+      teacher.updated_at = new Date().toISOString();
+      
+      result = database.teachers.create(teacher);
+    } else {
+      // Update timestamp
+      teacher.updated_at = new Date().toISOString();
+      result = database.teachers.update(teacher.id, teacher);
+    }
+    
+    event.sender.send('saveTeacherResponse', { success: true, teacher: result });
+  } catch (error) {
+    console.error('Error saving teacher:', error);
+    event.sender.send('saveTeacherResponse', { success: false, error: error.message });
+  }
+});
+
+// Handle teacher deletion
+ipcMain.on('deleteTeacher', (event, teacherId) => {
+  try {
+    const result = database.teachers.delete(teacherId);
+    event.sender.send('deleteTeacherResponse', { 
+      success: result.changes > 0,
+      id: teacherId
+    });
+  } catch (error) {
+    console.error('Error deleting teacher:', error);
+    event.sender.send('deleteTeacherResponse', { 
+      success: false, 
+      error: error.message,
+      id: teacherId
     });
   }
 });

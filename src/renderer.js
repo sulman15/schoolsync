@@ -3,9 +3,12 @@ const navLinks = document.querySelectorAll('.nav-link');
 const contentPages = document.querySelectorAll('.content-page');
 const addStudentBtn = document.getElementById('add-student-btn');
 const studentsTableBody = document.getElementById('students-table-body');
+const addTeacherBtn = document.getElementById('add-teacher-btn');
+const teachersTableBody = document.getElementById('teachers-table-body');
 
-// Store the currently editing student ID
+// Store the currently editing IDs
 let currentEditingStudentId = null;
+let currentEditingTeacherId = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,12 +44,15 @@ function setupNavigation() {
       // Load data for the selected page
       if (targetPage === 'students') {
         loadStudentsData();
+      } else if (targetPage === 'teachers') {
+        loadTeachersData();
       }
       // Add similar conditions for other pages
     });
   });
 }
 
+// STUDENT FUNCTIONS
 // Load students data into the table
 function loadStudentsData() {
   // Clear existing table data
@@ -90,6 +96,50 @@ window.api.receive('studentsData', (students) => {
   });
 });
 
+// TEACHER FUNCTIONS
+// Load teachers data into the table
+function loadTeachersData() {
+  // Clear existing table data
+  teachersTableBody.innerHTML = '';
+  
+  // Show loading indicator
+  teachersTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
+  
+  // Request data from main process
+  window.api.send('getTeachers');
+}
+
+// Handle received teachers data
+window.api.receive('teachersData', (teachers) => {
+  // Clear loading indicator
+  teachersTableBody.innerHTML = '';
+  
+  if (teachers.length === 0) {
+    teachersTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No teachers found</td></tr>';
+    return;
+  }
+  
+  // Add teacher data to the table
+  teachers.forEach(teacher => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${teacher.id}</td>
+      <td>${teacher.name}</td>
+      <td>${teacher.subject || 'Not assigned'}</td>
+      <td>${teacher.email || teacher.phone || 'N/A'}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary edit-teacher" data-id="${teacher.id}">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger delete-teacher" data-id="${teacher.id}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    teachersTableBody.appendChild(row);
+  });
+});
+
 // Set up event listeners for various actions
 function setupEventListeners() {
   // Add student button
@@ -114,8 +164,32 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Add teacher button
+  if (addTeacherBtn) {
+    addTeacherBtn.addEventListener('click', () => {
+      showTeacherModal();
+    });
+  }
+  
+  // Edit and delete teacher buttons (using event delegation)
+  if (teachersTableBody) {
+    teachersTableBody.addEventListener('click', (e) => {
+      const target = e.target.closest('button');
+      if (!target) return;
+      
+      const teacherId = target.getAttribute('data-id');
+      
+      if (target.classList.contains('edit-teacher')) {
+        editTeacher(teacherId);
+      } else if (target.classList.contains('delete-teacher')) {
+        deleteTeacher(teacherId);
+      }
+    });
+  }
 }
 
+// STUDENT MODAL FUNCTIONS
 // Show modal to add or edit a student
 function showStudentModal(student = null) {
   // Determine if we're adding or editing
@@ -322,5 +396,194 @@ window.api.receive('deleteStudentResponse', (response) => {
     loadStudentsData();
   } else {
     alert('Error deleting student: ' + response.error);
+  }
+});
+
+// TEACHER MODAL FUNCTIONS
+// Show modal to add or edit a teacher
+function showTeacherModal(teacher = null) {
+  // Determine if we're adding or editing
+  const isEditing = teacher !== null;
+  const modalTitle = isEditing ? 'Edit Teacher' : 'Add New Teacher';
+  
+  // Create modal HTML
+  const modalHtml = `
+    <div class="modal fade" id="teacherModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">${modalTitle}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="teacher-form">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-name" class="form-label">Full Name</label>
+                  <input type="text" class="form-control" id="teacher-name" value="${isEditing ? teacher.name : ''}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-subject" class="form-label">Subject</label>
+                  <input type="text" class="form-control" id="teacher-subject" value="${isEditing && teacher.subject ? teacher.subject : ''}" required>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-qualification" class="form-label">Qualification</label>
+                  <input type="text" class="form-control" id="teacher-qualification" value="${isEditing && teacher.qualification ? teacher.qualification : ''}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-gender" class="form-label">Gender</label>
+                  <select class="form-control" id="teacher-gender">
+                    <option value="">Select Gender</option>
+                    <option value="Male" ${isEditing && teacher.gender === 'Male' ? 'selected' : ''}>Male</option>
+                    <option value="Female" ${isEditing && teacher.gender === 'Female' ? 'selected' : ''}>Female</option>
+                    <option value="Other" ${isEditing && teacher.gender === 'Other' ? 'selected' : ''}>Other</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-dob" class="form-label">Date of Birth</label>
+                  <input type="date" class="form-control" id="teacher-dob" value="${isEditing && teacher.dob ? teacher.dob : ''}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-hire-date" class="form-label">Hire Date</label>
+                  <input type="date" class="form-control" id="teacher-hire-date" value="${isEditing && teacher.hire_date ? teacher.hire_date : new Date().toISOString().split('T')[0]}">
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="teacher-address" class="form-label">Address</label>
+                <textarea class="form-control" id="teacher-address" rows="2">${isEditing && teacher.address ? teacher.address : ''}</textarea>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-phone" class="form-label">Phone</label>
+                  <input type="tel" class="form-control" id="teacher-phone" value="${isEditing && teacher.phone ? teacher.phone : ''}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="teacher-email" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="teacher-email" value="${isEditing && teacher.email ? teacher.email : ''}">
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="save-teacher-btn">Save Teacher</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to the document
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = modalHtml;
+  document.body.appendChild(modalContainer);
+  
+  // Initialize the modal
+  const modal = new bootstrap.Modal(document.getElementById('teacherModal'));
+  modal.show();
+  
+  // Add event listener to the save button
+  document.getElementById('save-teacher-btn').addEventListener('click', () => {
+    saveTeacher(isEditing ? teacher.id : null);
+  });
+  
+  // Clean up when modal is hidden
+  document.getElementById('teacherModal').addEventListener('hidden.bs.modal', function () {
+    document.body.removeChild(modalContainer);
+    currentEditingTeacherId = null;
+  });
+}
+
+// Save teacher data
+function saveTeacher(teacherId = null) {
+  // Get form values
+  const name = document.getElementById('teacher-name').value;
+  const subject = document.getElementById('teacher-subject').value;
+  const qualification = document.getElementById('teacher-qualification').value;
+  const gender = document.getElementById('teacher-gender').value;
+  const dob = document.getElementById('teacher-dob').value;
+  const hireDate = document.getElementById('teacher-hire-date').value;
+  const address = document.getElementById('teacher-address').value;
+  const phone = document.getElementById('teacher-phone').value;
+  const email = document.getElementById('teacher-email').value;
+  
+  // Validate required fields
+  if (!name || !subject) {
+    alert('Please fill in all required fields');
+    return;
+  }
+  
+  // Create teacher object
+  const teacher = {
+    isNew: teacherId === null,
+    id: teacherId,
+    name,
+    subject,
+    qualification,
+    gender,
+    dob,
+    hire_date: hireDate,
+    address,
+    phone,
+    email
+  };
+  
+  // Send to main process
+  window.api.send('saveTeacher', teacher);
+  
+  // Hide the modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('teacherModal'));
+  modal.hide();
+}
+
+// Handle save teacher response
+window.api.receive('saveTeacherResponse', (response) => {
+  if (response.success) {
+    // Reload teachers data
+    loadTeachersData();
+  } else {
+    alert('Error saving teacher: ' + response.error);
+  }
+});
+
+// Edit teacher function
+function editTeacher(teacherId) {
+  // Request the teacher data from main process
+  window.api.send('getTeacher', teacherId);
+  currentEditingTeacherId = teacherId;
+}
+
+// Handle get teacher response
+window.api.receive('getTeacherResponse', (teacher) => {
+  if (teacher) {
+    showTeacherModal(teacher);
+  } else {
+    alert('Error: Teacher not found');
+  }
+});
+
+// Delete teacher function
+function deleteTeacher(teacherId) {
+  // Show confirmation dialog
+  if (confirm('Are you sure you want to delete this teacher?')) {
+    window.api.send('deleteTeacher', teacherId);
+  }
+}
+
+// Handle delete teacher response
+window.api.receive('deleteTeacherResponse', (response) => {
+  if (response.success) {
+    // Reload teachers data
+    loadTeachersData();
+  } else {
+    alert('Error deleting teacher: ' + response.error);
   }
 }); 
