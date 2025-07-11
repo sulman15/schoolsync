@@ -386,6 +386,199 @@ const attendanceDb = {
   }
 };
 
+// Database CRUD operations for Grades
+const gradesDb = {
+  // Get all grade records
+  getAll: () => {
+    return readDbFile(dbFiles.grades);
+  },
+  
+  // Get grade records by class
+  getByClass: (classId) => {
+    const grades = readDbFile(dbFiles.grades);
+    return grades.filter(record => record.classId === classId);
+  },
+  
+  // Get grade records by student
+  getByStudent: (studentId) => {
+    const grades = readDbFile(dbFiles.grades);
+    return grades.filter(record => record.studentId === studentId);
+  },
+  
+  // Get grade records by assignment
+  getByAssignment: (assignmentId) => {
+    const grades = readDbFile(dbFiles.grades);
+    return grades.filter(record => record.assignmentId === assignmentId);
+  },
+  
+  // Get grade records by class and assignment
+  getByClassAndAssignment: (classId, assignmentId) => {
+    const grades = readDbFile(dbFiles.grades);
+    return grades.filter(record => record.classId === classId && record.assignmentId === assignmentId);
+  },
+  
+  // Create or update assignment grades for a class
+  createAssignmentGrades: (assignmentGrades) => {
+    const grades = readDbFile(dbFiles.grades);
+    
+    // Check if assignment record already exists
+    const existingIndex = grades.findIndex(
+      record => record.classId === assignmentGrades.classId && 
+                record.assignmentId === assignmentGrades.assignmentId
+    );
+    
+    if (existingIndex !== -1) {
+      // Update existing record
+      grades[existingIndex] = {
+        ...grades[existingIndex],
+        ...assignmentGrades,
+        updated_at: new Date().toISOString()
+      };
+    } else {
+      // Add new record
+      grades.push({
+        ...assignmentGrades,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+    
+    if (writeDbFile(dbFiles.grades, grades)) {
+      return { success: true, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  },
+  
+  // Update student grade for an assignment
+  updateStudentGrade: (classId, assignmentId, studentId, grade, feedback) => {
+    const grades = readDbFile(dbFiles.grades);
+    
+    // Find the assignment record
+    const recordIndex = grades.findIndex(
+      record => record.classId === classId && record.assignmentId === assignmentId
+    );
+    
+    if (recordIndex === -1) {
+      return { success: false, message: 'Assignment record not found' };
+    }
+    
+    // Find the student in the grades record
+    const studentIndex = grades[recordIndex].students.findIndex(
+      student => student.studentId === studentId
+    );
+    
+    if (studentIndex === -1) {
+      return { success: false, message: 'Student not found in assignment record' };
+    }
+    
+    // Update the student's grade
+    grades[recordIndex].students[studentIndex].grade = grade;
+    grades[recordIndex].students[studentIndex].feedback = feedback;
+    grades[recordIndex].updated_at = new Date().toISOString();
+    
+    if (writeDbFile(dbFiles.grades, grades)) {
+      return { success: true, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  },
+  
+  // Create a new assignment
+  createAssignment: (classId, assignment) => {
+    const grades = readDbFile(dbFiles.grades);
+    
+    // Generate a unique assignment ID if not provided
+    if (!assignment.id) {
+      // Find the highest assignment ID for this class
+      const classAssignments = grades.filter(record => record.classId === classId);
+      let maxId = 0;
+      
+      classAssignments.forEach(record => {
+        const idNum = parseInt(record.assignmentId.replace(`${classId}-A`, ''));
+        if (!isNaN(idNum) && idNum > maxId) {
+          maxId = idNum;
+        }
+      });
+      
+      // Create new ID
+      assignment.id = `${classId}-A${String(maxId + 1).padStart(3, '0')}`;
+    }
+    
+    // Create new assignment record with empty student grades
+    const newAssignment = {
+      classId,
+      assignmentId: assignment.id,
+      title: assignment.title,
+      description: assignment.description,
+      type: assignment.type,
+      maxScore: assignment.maxScore,
+      dueDate: assignment.dueDate,
+      students: assignment.students || [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    grades.push(newAssignment);
+    
+    if (writeDbFile(dbFiles.grades, grades)) {
+      return { success: true, assignmentId: assignment.id, changes: 1 };
+    }
+    return { success: false, changes: 0 };
+  },
+  
+  // Delete an assignment
+  deleteAssignment: (assignmentId) => {
+    const grades = readDbFile(dbFiles.grades);
+    const initialLength = grades.length;
+    const filteredGrades = grades.filter(record => record.assignmentId !== assignmentId);
+    
+    if (filteredGrades.length < initialLength) {
+      if (writeDbFile(dbFiles.grades, filteredGrades)) {
+        return { success: true, changes: 1 };
+      }
+    }
+    
+    return { success: false, changes: 0 };
+  },
+  
+  // Get student's overall grade for a class
+  getStudentClassGrade: (classId, studentId) => {
+    const grades = readDbFile(dbFiles.grades);
+    const classAssignments = grades.filter(record => record.classId === classId);
+    
+    if (classAssignments.length === 0) {
+      return { average: 0, assignments: [] };
+    }
+    
+    let totalPoints = 0;
+    let totalMaxPoints = 0;
+    const assignmentGrades = [];
+    
+    classAssignments.forEach(assignment => {
+      const studentGrade = assignment.students.find(s => s.studentId === studentId);
+      
+      if (studentGrade && studentGrade.grade !== undefined) {
+        totalPoints += parseFloat(studentGrade.grade);
+        totalMaxPoints += parseFloat(assignment.maxScore);
+        
+        assignmentGrades.push({
+          assignmentId: assignment.assignmentId,
+          title: assignment.title,
+          grade: studentGrade.grade,
+          maxScore: assignment.maxScore,
+          percentage: (studentGrade.grade / assignment.maxScore) * 100
+        });
+      }
+    });
+    
+    const average = totalMaxPoints > 0 ? (totalPoints / totalMaxPoints) * 100 : 0;
+    
+    return {
+      average: parseFloat(average.toFixed(2)),
+      assignments: assignmentGrades
+    };
+  }
+};
+
 // User authentication operations
 const usersDb = {
   // Find user by username and password
@@ -412,6 +605,7 @@ module.exports = {
   teachers: teachersDb,
   classes: classesDb,
   attendance: attendanceDb,
+  grades: gradesDb,
   users: usersDb,
   
   // Close function (no-op for file-based storage)

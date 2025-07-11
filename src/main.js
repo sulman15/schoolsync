@@ -489,6 +489,187 @@ ipcMain.on('deleteAttendance', (event, { classId, date }) => {
   }
 });
 
+// GRADES OPERATIONS
+// Handle get all grades
+ipcMain.on('getGrades', (event) => {
+  try {
+    const grades = database.grades.getAll();
+    event.sender.send('gradesData', grades);
+  } catch (error) {
+    console.error('Error fetching grades:', error);
+    event.sender.send('gradesData', []);
+  }
+});
+
+// Handle get grades by class
+ipcMain.on('getGradesByClass', (event, classId) => {
+  try {
+    const grades = database.grades.getByClass(classId);
+    event.sender.send('gradesByClassData', {
+      classId,
+      grades
+    });
+  } catch (error) {
+    console.error('Error fetching grades by class:', error);
+    event.sender.send('gradesByClassData', {
+      classId,
+      grades: []
+    });
+  }
+});
+
+// Handle get grades by student
+ipcMain.on('getGradesByStudent', (event, studentId) => {
+  try {
+    const grades = database.grades.getByStudent(studentId);
+    event.sender.send('gradesByStudentData', {
+      studentId,
+      grades
+    });
+  } catch (error) {
+    console.error('Error fetching grades by student:', error);
+    event.sender.send('gradesByStudentData', {
+      studentId,
+      grades: []
+    });
+  }
+});
+
+// Handle get grades by assignment
+ipcMain.on('getGradesByAssignment', (event, assignmentId) => {
+  try {
+    const grades = database.grades.getByAssignment(assignmentId);
+    event.sender.send('gradesByAssignmentData', {
+      assignmentId,
+      grades
+    });
+  } catch (error) {
+    console.error('Error fetching grades by assignment:', error);
+    event.sender.send('gradesByAssignmentData', {
+      assignmentId,
+      grades: []
+    });
+  }
+});
+
+// Handle get grades by class and assignment
+ipcMain.on('getGradesByClassAndAssignment', (event, { classId, assignmentId }) => {
+  try {
+    const grades = database.grades.getByClassAndAssignment(classId, assignmentId);
+    event.sender.send('gradesByClassAndAssignmentData', {
+      classId,
+      assignmentId,
+      grades
+    });
+  } catch (error) {
+    console.error('Error fetching grades by class and assignment:', error);
+    event.sender.send('gradesByClassAndAssignmentData', {
+      classId,
+      assignmentId,
+      grades: []
+    });
+  }
+});
+
+// Handle create assignment
+ipcMain.on('createAssignment', (event, { classId, assignment }) => {
+  try {
+    const result = database.grades.createAssignment(classId, assignment);
+    event.sender.send('createAssignmentResponse', { 
+      success: result.success,
+      assignmentId: result.assignmentId,
+      classId
+    });
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    event.sender.send('createAssignmentResponse', { 
+      success: false, 
+      error: error.message,
+      classId
+    });
+  }
+});
+
+// Handle save assignment grades
+ipcMain.on('saveAssignmentGrades', (event, assignmentGrades) => {
+  try {
+    const result = database.grades.createAssignmentGrades(assignmentGrades);
+    event.sender.send('saveAssignmentGradesResponse', { 
+      success: result.success,
+      classId: assignmentGrades.classId,
+      assignmentId: assignmentGrades.assignmentId
+    });
+  } catch (error) {
+    console.error('Error saving assignment grades:', error);
+    event.sender.send('saveAssignmentGradesResponse', { 
+      success: false, 
+      error: error.message,
+      classId: assignmentGrades.classId,
+      assignmentId: assignmentGrades.assignmentId
+    });
+  }
+});
+
+// Handle update student grade
+ipcMain.on('updateStudentGrade', (event, { classId, assignmentId, studentId, grade, feedback }) => {
+  try {
+    const result = database.grades.updateStudentGrade(classId, assignmentId, studentId, grade, feedback);
+    event.sender.send('updateStudentGradeResponse', { 
+      success: result.success,
+      classId,
+      assignmentId,
+      studentId
+    });
+  } catch (error) {
+    console.error('Error updating student grade:', error);
+    event.sender.send('updateStudentGradeResponse', { 
+      success: false, 
+      error: error.message,
+      classId,
+      assignmentId,
+      studentId
+    });
+  }
+});
+
+// Handle delete assignment
+ipcMain.on('deleteAssignment', (event, assignmentId) => {
+  try {
+    const result = database.grades.deleteAssignment(assignmentId);
+    event.sender.send('deleteAssignmentResponse', { 
+      success: result.success,
+      assignmentId
+    });
+  } catch (error) {
+    console.error('Error deleting assignment:', error);
+    event.sender.send('deleteAssignmentResponse', { 
+      success: false, 
+      error: error.message,
+      assignmentId
+    });
+  }
+});
+
+// Handle get student class grade
+ipcMain.on('getStudentClassGrade', (event, { classId, studentId }) => {
+  try {
+    const gradeData = database.grades.getStudentClassGrade(classId, studentId);
+    event.sender.send('studentClassGradeData', {
+      classId,
+      studentId,
+      ...gradeData
+    });
+  } catch (error) {
+    console.error('Error fetching student class grade:', error);
+    event.sender.send('studentClassGradeData', {
+      classId,
+      studentId,
+      average: 0,
+      assignments: []
+    });
+  }
+});
+
 // Clean up resources when app is about to quit
 app.on('before-quit', () => {
   // Close the database connection (no-op for JSON files)

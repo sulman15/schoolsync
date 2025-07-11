@@ -16,11 +16,28 @@ const attendanceTableBody = document.getElementById('attendance-table-body');
 const attendanceHistoryBody = document.getElementById('attendance-history-body');
 const attendanceClassName = document.getElementById('attendance-class-name');
 const attendanceDateDisplay = document.getElementById('attendance-date-display');
+const gradesClassSelect = document.getElementById('grades-class');
+const loadAssignmentsBtn = document.getElementById('load-assignments-btn');
+const addAssignmentBtn = document.getElementById('add-assignment-btn');
+const assignmentsContainer = document.getElementById('assignments-container');
+const assignmentsTableBody = document.getElementById('assignments-table-body');
+const gradesClassName = document.getElementById('grades-class-name');
+const assignmentGradesContainer = document.getElementById('assignment-grades-container');
+const assignmentTitle = document.getElementById('assignment-title');
+const gradesTableBody = document.getElementById('grades-table-body');
+const saveGradesBtn = document.getElementById('save-grades-btn');
+const gradeReportStudent = document.getElementById('grade-report-student');
+const loadStudentGradesBtn = document.getElementById('load-student-grades-btn');
+const studentReportContainer = document.getElementById('student-report-container');
+const reportStudentName = document.getElementById('report-student-name');
+const reportOverallGrade = document.getElementById('report-overall-grade');
+const studentGradesTableBody = document.getElementById('student-grades-table-body');
 
 // Store the currently editing IDs
 let currentEditingStudentId = null;
 let currentEditingTeacherId = null;
 let currentEditingClassId = null;
+let currentEditingAssignmentId = null;
 
 // Store teachers list for class assignment
 let teachersList = [];
@@ -30,6 +47,10 @@ let classesList = [];
 let studentsList = [];
 // Store current attendance data
 let currentAttendance = null;
+// Store current assignments data
+let currentAssignments = [];
+// Store current assignment grades data
+let currentAssignmentGrades = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -103,6 +124,8 @@ function setupNavigation() {
         loadClassesData();
       } else if (targetPage === 'attendance') {
         loadAttendanceData();
+      } else if (targetPage === 'grades') {
+        loadGradesData();
       }
       // Add similar conditions for other pages
     });
@@ -304,6 +327,30 @@ window.api.receive('classesData', (classes) => {
       attendanceClassSelect.value = currentSelection;
     }
   }
+  
+  // Update grades class select
+  if (gradesClassSelect) {
+    // Keep the current selection
+    const currentSelection = gradesClassSelect.value;
+    
+    // Clear existing options except the first one
+    while (gradesClassSelect.options.length > 1) {
+      gradesClassSelect.remove(1);
+    }
+    
+    // Add class options
+    classes.forEach(classItem => {
+      const option = document.createElement('option');
+      option.value = classItem.id;
+      option.textContent = `${classItem.name} ${classItem.subject ? `(${classItem.subject})` : ''}`;
+      gradesClassSelect.appendChild(option);
+    });
+    
+    // Restore the selection if it exists
+    if (currentSelection) {
+      gradesClassSelect.value = currentSelection;
+    }
+  }
 });
 
 // Set up event listeners for various actions
@@ -413,6 +460,52 @@ function setupEventListeners() {
       } else if (target.classList.contains('delete-attendance')) {
         deleteAttendance(classId, date);
       }
+    });
+  }
+  
+  // Load assignments button
+  if (loadAssignmentsBtn) {
+    loadAssignmentsBtn.addEventListener('click', () => {
+      loadClassAssignments();
+    });
+  }
+  
+  // Add assignment button
+  if (addAssignmentBtn) {
+    addAssignmentBtn.addEventListener('click', () => {
+      showAssignmentModal();
+    });
+  }
+  
+  // Assignment actions (using event delegation)
+  if (assignmentsTableBody) {
+    assignmentsTableBody.addEventListener('click', (e) => {
+      const target = e.target.closest('button');
+      if (!target) return;
+      
+      const assignmentId = target.getAttribute('data-id');
+      
+      if (target.classList.contains('edit-assignment')) {
+        editAssignment(assignmentId);
+      } else if (target.classList.contains('delete-assignment')) {
+        deleteAssignment(assignmentId);
+      } else if (target.classList.contains('grade-assignment')) {
+        loadAssignmentGrades(assignmentId);
+      }
+    });
+  }
+  
+  // Save grades button
+  if (saveGradesBtn) {
+    saveGradesBtn.addEventListener('click', () => {
+      saveAssignmentGrades();
+    });
+  }
+  
+  // Load student grades button
+  if (loadStudentGradesBtn) {
+    loadStudentGradesBtn.addEventListener('click', () => {
+      loadStudentGrades();
     });
   }
 }
@@ -1294,4 +1387,490 @@ window.api.receive('deleteAttendanceResponse', (response) => {
   } else {
     alert(`Error deleting attendance record: ${response.error || 'Unknown error'}`);
   }
+}); 
+
+// GRADES FUNCTIONS
+// Load grades data
+function loadGradesData() {
+  // Load classes for the dropdown
+  window.api.send('getClasses');
+  
+  // Load students for the dropdown
+  window.api.send('getStudents');
+  
+  // Hide containers until a class is selected
+  if (assignmentsContainer) {
+    assignmentsContainer.classList.add('d-none');
+  }
+  
+  if (assignmentGradesContainer) {
+    assignmentGradesContainer.classList.add('d-none');
+  }
+  
+  if (studentReportContainer) {
+    studentReportContainer.classList.add('d-none');
+  }
+}
+
+// Load class assignments
+function loadClassAssignments() {
+  const classId = gradesClassSelect.value;
+  
+  if (!classId) {
+    alert('Please select a class');
+    return;
+  }
+  
+  // Show loading indicator
+  assignmentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+  
+  // Get assignments for the selected class
+  window.api.send('getGradesByClass', classId);
+  
+  // Show the assignments container
+  assignmentsContainer.classList.remove('d-none');
+  
+  // Update the title
+  const selectedClass = classesList.find(c => c.id === classId);
+  if (selectedClass) {
+    gradesClassName.textContent = selectedClass.name;
+  }
+}
+
+// Handle grades by class response
+window.api.receive('gradesByClassData', (response) => {
+  const { classId, grades } = response;
+  
+  // Store current assignments
+  currentAssignments = grades;
+  
+  // Clear the table
+  assignmentsTableBody.innerHTML = '';
+  
+  if (grades.length === 0) {
+    assignmentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No assignments found for this class</td></tr>';
+    return;
+  }
+  
+  // Add each assignment to the table
+  grades.forEach(assignment => {
+    // Format due date for display
+    const dueDate = assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'Not set';
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${assignment.assignmentId}</td>
+      <td>${assignment.title}</td>
+      <td>${assignment.type || 'Not specified'}</td>
+      <td>${assignment.maxScore}</td>
+      <td>${dueDate}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary edit-assignment" data-id="${assignment.assignmentId}">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-success grade-assignment" data-id="${assignment.assignmentId}">
+          <i class="bi bi-check2-square"></i> Grade
+        </button>
+        <button class="btn btn-sm btn-outline-danger delete-assignment" data-id="${assignment.assignmentId}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    assignmentsTableBody.appendChild(row);
+  });
+});
+
+// Show modal to add or edit an assignment
+function showAssignmentModal(assignment = null) {
+  // Determine if we're adding or editing
+  const isEditing = assignment !== null;
+  const modalTitle = isEditing ? 'Edit Assignment' : 'Add New Assignment';
+  
+  // Create modal HTML
+  const modalHtml = `
+    <div class="modal fade" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="assignmentModalLabel">${modalTitle}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="assignment-form">
+              <div class="mb-3">
+                <label for="assignment-title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="assignment-title" value="${isEditing ? assignment.title : ''}" required>
+              </div>
+              <div class="mb-3">
+                <label for="assignment-description" class="form-label">Description</label>
+                <textarea class="form-control" id="assignment-description" rows="3">${isEditing && assignment.description ? assignment.description : ''}</textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="assignment-type" class="form-label">Type</label>
+                  <select class="form-control" id="assignment-type">
+                    <option value="homework" ${isEditing && assignment.type === 'homework' ? 'selected' : ''}>Homework</option>
+                    <option value="quiz" ${isEditing && assignment.type === 'quiz' ? 'selected' : ''}>Quiz</option>
+                    <option value="test" ${isEditing && assignment.type === 'test' ? 'selected' : ''}>Test</option>
+                    <option value="project" ${isEditing && assignment.type === 'project' ? 'selected' : ''}>Project</option>
+                    <option value="other" ${isEditing && assignment.type === 'other' ? 'selected' : ''}>Other</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="assignment-max-score" class="form-label">Maximum Score</label>
+                  <input type="number" class="form-control" id="assignment-max-score" min="0" value="${isEditing ? assignment.maxScore : '100'}" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="assignment-due-date" class="form-label">Due Date</label>
+                <input type="date" class="form-control" id="assignment-due-date" value="${isEditing && assignment.dueDate ? assignment.dueDate : ''}">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="save-assignment-btn">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to the DOM
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  
+  // Create Bootstrap modal instance
+  const modalElement = document.getElementById('assignmentModal');
+  const modal = new bootstrap.Modal(modalElement);
+  
+  // Show the modal
+  modal.show();
+  
+  // Add event listener to save button
+  document.getElementById('save-assignment-btn').addEventListener('click', () => {
+    saveAssignment(isEditing ? assignment.assignmentId : null);
+  });
+  
+  // Remove modal from DOM after it's hidden
+  modalElement.addEventListener('hidden.bs.modal', () => {
+    modalElement.remove();
+  });
+}
+
+// Save assignment
+function saveAssignment(assignmentId = null) {
+  const classId = gradesClassSelect.value;
+  
+  // Get the modal element to scope our selectors
+  const modalElement = document.getElementById('assignmentModal');
+  
+  // Get form values from within the modal
+  const title = modalElement.querySelector('#assignment-title').value.trim();
+  const description = modalElement.querySelector('#assignment-description').value.trim();
+  const type = modalElement.querySelector('#assignment-type').value;
+  const maxScore = modalElement.querySelector('#assignment-max-score').value;
+  const dueDate = modalElement.querySelector('#assignment-due-date').value;
+  
+  // Validate form
+  if (!title) {
+    alert('Please enter an assignment title');
+    return;
+  }
+  
+  if (!maxScore || isNaN(maxScore) || maxScore <= 0) {
+    alert('Please enter a valid maximum score');
+    return;
+  }
+  
+  // Prepare assignment data
+  const assignment = {
+    id: assignmentId,
+    title,
+    description,
+    type,
+    maxScore: parseFloat(maxScore),
+    dueDate
+  };
+  
+  // If editing, find the existing students array
+  if (assignmentId) {
+    const existingAssignment = currentAssignments.find(a => a.assignmentId === assignmentId);
+    if (existingAssignment) {
+      assignment.students = existingAssignment.students;
+    }
+  }
+  
+  // Send data to main process
+  window.api.send('createAssignment', { classId, assignment });
+  
+  // Hide the modal
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  modal.hide();
+}
+
+// Handle create assignment response
+window.api.receive('createAssignmentResponse', (response) => {
+  if (response.success) {
+    // Reload assignments
+    loadClassAssignments();
+  } else {
+    alert(`Error creating assignment: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Edit assignment
+function editAssignment(assignmentId) {
+  // Find the assignment in the current assignments
+  const assignment = currentAssignments.find(a => a.assignmentId === assignmentId);
+  
+  if (assignment) {
+    showAssignmentModal(assignment);
+  } else {
+    alert('Assignment not found');
+  }
+}
+
+// Delete assignment
+function deleteAssignment(assignmentId) {
+  if (confirm('Are you sure you want to delete this assignment?')) {
+    window.api.send('deleteAssignment', assignmentId);
+  }
+}
+
+// Handle delete assignment response
+window.api.receive('deleteAssignmentResponse', (response) => {
+  if (response.success) {
+    // Reload assignments
+    loadClassAssignments();
+  } else {
+    alert(`Error deleting assignment: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Load assignment grades
+function loadAssignmentGrades(assignmentId) {
+  const classId = gradesClassSelect.value;
+  
+  // Find the assignment in the current assignments
+  const assignment = currentAssignments.find(a => a.assignmentId === assignmentId);
+  
+  if (!assignment) {
+    alert('Assignment not found');
+    return;
+  }
+  
+  // Store current editing assignment ID
+  currentEditingAssignmentId = assignmentId;
+  
+  // Show loading indicator
+  gradesTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
+  
+  // Get students in the selected class
+  window.api.send('getStudentsInClass', classId);
+  
+  // Show the grades container
+  assignmentGradesContainer.classList.remove('d-none');
+  
+  // Update the title
+  assignmentTitle.textContent = assignment.title;
+  
+  // Store the current assignment grades
+  currentAssignmentGrades = assignment;
+}
+
+// Handle students in class response for grades
+window.api.receive('studentsInClassResponse', (response) => {
+  const { classId, students } = response;
+  
+  // Store students list
+  studentsList = students;
+  
+  // If we have an assignment selected, populate the grades table
+  if (currentEditingAssignmentId) {
+    populateGradesTable();
+  }
+  
+  // Update student dropdown for grade reports
+  if (gradeReportStudent) {
+    // Keep the current selection
+    const currentSelection = gradeReportStudent.value;
+    
+    // Clear existing options except the first one
+    while (gradeReportStudent.options.length > 1) {
+      gradeReportStudent.remove(1);
+    }
+    
+    // Add student options
+    students.forEach(student => {
+      const option = document.createElement('option');
+      option.value = student.id;
+      option.textContent = student.name;
+      gradeReportStudent.appendChild(option);
+    });
+    
+    // Restore the selection if it exists
+    if (currentSelection) {
+      gradeReportStudent.value = currentSelection;
+    }
+  }
+});
+
+// Populate grades table
+function populateGradesTable() {
+  // Clear the table
+  gradesTableBody.innerHTML = '';
+  
+  if (!studentsList || studentsList.length === 0) {
+    gradesTableBody.innerHTML = '<tr><td colspan="4" class="text-center">No students in this class</td></tr>';
+    return;
+  }
+  
+  // Add each student to the table
+  studentsList.forEach(student => {
+    // Find the student's grade if it exists
+    let studentGrade = null;
+    let feedback = '';
+    
+    if (currentAssignmentGrades && currentAssignmentGrades.students) {
+      const gradeRecord = currentAssignmentGrades.students.find(s => s.studentId === student.id);
+      if (gradeRecord) {
+        studentGrade = gradeRecord.grade;
+        feedback = gradeRecord.feedback || '';
+      }
+    }
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${student.id}</td>
+      <td>${student.name}</td>
+      <td>
+        <input type="number" class="form-control grade-input" data-student-id="${student.id}" min="0" max="${currentAssignmentGrades.maxScore}" value="${studentGrade !== null ? studentGrade : ''}">
+      </td>
+      <td>
+        <input type="text" class="form-control feedback-input" data-student-id="${student.id}" value="${feedback}">
+      </td>
+    `;
+    gradesTableBody.appendChild(row);
+  });
+}
+
+// Save assignment grades
+function saveAssignmentGrades() {
+  if (!currentEditingAssignmentId || !currentAssignmentGrades) {
+    alert('No assignment selected');
+    return;
+  }
+  
+  const classId = gradesClassSelect.value;
+  
+  // Get all grade inputs and feedback inputs
+  const gradeInputs = document.querySelectorAll('.grade-input');
+  const feedbackInputs = document.querySelectorAll('.feedback-input');
+  
+  // Create students array with grades
+  const students = [];
+  
+  gradeInputs.forEach(input => {
+    const studentId = input.getAttribute('data-student-id');
+    const grade = input.value.trim() ? parseFloat(input.value) : null;
+    
+    // Find corresponding feedback
+    const feedbackInput = document.querySelector(`.feedback-input[data-student-id="${studentId}"]`);
+    const feedback = feedbackInput ? feedbackInput.value.trim() : '';
+    
+    // Only add students with grades
+    if (grade !== null) {
+      students.push({
+        studentId,
+        grade,
+        feedback
+      });
+    }
+  });
+  
+  // Prepare assignment grades data
+  const assignmentGrades = {
+    classId,
+    assignmentId: currentEditingAssignmentId,
+    title: currentAssignmentGrades.title,
+    description: currentAssignmentGrades.description,
+    type: currentAssignmentGrades.type,
+    maxScore: currentAssignmentGrades.maxScore,
+    dueDate: currentAssignmentGrades.dueDate,
+    students
+  };
+  
+  // Send data to main process
+  window.api.send('saveAssignmentGrades', assignmentGrades);
+}
+
+// Handle save assignment grades response
+window.api.receive('saveAssignmentGradesResponse', (response) => {
+  if (response.success) {
+    alert('Grades saved successfully');
+    // Reload assignments
+    loadClassAssignments();
+  } else {
+    alert(`Error saving grades: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Load student grades
+function loadStudentGrades() {
+  const classId = gradesClassSelect.value;
+  const studentId = gradeReportStudent.value;
+  
+  if (!classId) {
+    alert('Please select a class');
+    return;
+  }
+  
+  if (!studentId) {
+    alert('Please select a student');
+    return;
+  }
+  
+  // Show loading indicator
+  studentGradesTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
+  
+  // Get student's grade data
+  window.api.send('getStudentClassGrade', { classId, studentId });
+  
+  // Show the student report container
+  studentReportContainer.classList.remove('d-none');
+  
+  // Update the student name
+  const selectedStudent = studentsList.find(s => s.id === studentId);
+  if (selectedStudent) {
+    reportStudentName.textContent = selectedStudent.name;
+  }
+}
+
+// Handle student class grade data
+window.api.receive('studentClassGradeData', (response) => {
+  const { average, assignments } = response;
+  
+  // Update overall grade
+  reportOverallGrade.textContent = `${average}%`;
+  
+  // Clear the table
+  studentGradesTableBody.innerHTML = '';
+  
+  if (!assignments || assignments.length === 0) {
+    studentGradesTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No grades found for this student</td></tr>';
+    return;
+  }
+  
+  // Add each assignment to the table
+  assignments.forEach(assignment => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${assignment.title}</td>
+      <td>${assignment.type || 'Not specified'}</td>
+      <td>${assignment.grade}</td>
+      <td>${assignment.maxScore}</td>
+      <td>${assignment.percentage.toFixed(2)}%</td>
+    `;
+    studentGradesTableBody.appendChild(row);
+  });
 }); 

@@ -232,6 +232,128 @@
             </div>
           </div>
 
+          <div id="grades" class="content-page">
+            <h2>Grades Management</h2>
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="grades-class" class="form-label">Select Class</label>
+                    <select class="form-select" id="grades-class">
+                      <option value="">Select Class</option>
+                      <!-- Classes will be loaded here -->
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="load-assignments-btn">
+                      <i class="bi bi-search"></i> Load Assignments
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div id="assignments-container" class="d-none">
+              <div class="d-flex justify-content-between mb-3">
+                <h4>Assignments for <span id="grades-class-name"></span></h4>
+                <button class="btn btn-primary" id="add-assignment-btn">
+                  <i class="bi bi-plus"></i> Add New Assignment
+                </button>
+              </div>
+              
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Max Score</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="assignments-table-body">
+                  <!-- Assignments will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div id="assignment-grades-container" class="d-none mt-5">
+              <div class="d-flex justify-content-between mb-3">
+                <h4>Grades for <span id="assignment-title"></span></h4>
+                <button class="btn btn-success" id="save-grades-btn">
+                  <i class="bi bi-save"></i> Save Grades
+                </button>
+              </div>
+              
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Student Name</th>
+                    <th>Grade</th>
+                    <th>Feedback</th>
+                  </tr>
+                </thead>
+                <tbody id="grades-table-body">
+                  <!-- Grades data will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div id="student-grades-view" class="d-none mt-5">
+              <h4>Student Grade Report</h4>
+              <div class="card mb-4">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label for="grade-report-student" class="form-label">Select Student</label>
+                      <select class="form-select" id="grade-report-student">
+                        <option value="">Select Student</option>
+                        <!-- Students will be loaded here -->
+                      </select>
+                    </div>
+                    <div class="col-md-6 mb-3 d-flex align-items-end">
+                      <button class="btn btn-primary w-100" id="load-student-grades-btn">
+                        <i class="bi bi-search"></i> View Grades
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div id="student-report-container" class="d-none">
+                <div class="card mb-4">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h5>Student: <span id="report-student-name"></span></h5>
+                      </div>
+                      <div class="col-md-6 text-end">
+                        <h5>Overall Grade: <span id="report-overall-grade"></span></h5>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Assignment</th>
+                      <th>Type</th>
+                      <th>Score</th>
+                      <th>Max Score</th>
+                      <th>Percentage</th>
+                    </tr>
+                  </thead>
+                  <tbody id="student-grades-table-body">
+                    <!-- Student grades will be loaded here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           <!-- Other content pages will be added here -->
         </div>
       </div>
