@@ -17,7 +17,10 @@ contextBridge.exposeInMainWorld(
         'saveTeacher', 
         'deleteTeacher',
         'getClasses', 
-        'saveClass'
+        'getClass',
+        'saveClass',
+        'deleteClass',
+        'getStudentsInClass'
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
@@ -34,7 +37,11 @@ contextBridge.exposeInMainWorld(
         'getTeacherResponse',
         'saveTeacherResponse',
         'deleteTeacherResponse',
-        'classesData'
+        'classesData',
+        'getClassResponse',
+        'saveClassResponse',
+        'deleteClassResponse',
+        'studentsInClassResponse'
       ];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender` 

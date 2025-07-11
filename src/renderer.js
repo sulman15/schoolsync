@@ -5,10 +5,18 @@ const addStudentBtn = document.getElementById('add-student-btn');
 const studentsTableBody = document.getElementById('students-table-body');
 const addTeacherBtn = document.getElementById('add-teacher-btn');
 const teachersTableBody = document.getElementById('teachers-table-body');
+const addClassBtn = document.getElementById('add-class-btn');
+const classesTableBody = document.getElementById('classes-table-body');
 
 // Store the currently editing IDs
 let currentEditingStudentId = null;
 let currentEditingTeacherId = null;
+let currentEditingClassId = null;
+
+// Store teachers list for class assignment
+let teachersList = [];
+// Store classes list for student assignment
+let classesList = [];
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,11 +24,38 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   
   // Load initial data
-  loadStudentsData();
+  loadDashboardData();
   
   // Set up event listeners
   setupEventListeners();
 });
+
+// Load dashboard data
+function loadDashboardData() {
+  // Request data for dashboard
+  window.api.send('getStudents');
+  window.api.send('getTeachers');
+  window.api.send('getClasses');
+}
+
+// Update dashboard counts
+function updateDashboardCounts() {
+  const studentCount = document.getElementById('student-count');
+  const teacherCount = document.getElementById('teacher-count');
+  const classCount = document.getElementById('class-count');
+  
+  if (studentCount) {
+    studentCount.textContent = studentsTableBody ? studentsTableBody.childElementCount : 0;
+  }
+  
+  if (teacherCount) {
+    teacherCount.textContent = teachersList ? teachersList.length : 0;
+  }
+  
+  if (classCount) {
+    classCount.textContent = classesList ? classesList.length : 0;
+  }
+}
 
 // Navigation setup
 function setupNavigation() {
@@ -46,6 +81,8 @@ function setupNavigation() {
         loadStudentsData();
       } else if (targetPage === 'teachers') {
         loadTeachersData();
+      } else if (targetPage === 'classes') {
+        loadClassesData();
       }
       // Add similar conditions for other pages
     });
@@ -63,6 +100,9 @@ function loadStudentsData() {
   
   // Request data from main process
   window.api.send('getStudents');
+  
+  // Also load classes for dropdown
+  window.api.send('getClasses');
 }
 
 // Handle received students data
@@ -71,17 +111,27 @@ window.api.receive('studentsData', (students) => {
   studentsTableBody.innerHTML = '';
   
   if (students.length === 0) {
-    studentsTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No students found</td></tr>';
+    studentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No students found</td></tr>';
     return;
   }
   
   // Add student data to the table
   students.forEach(student => {
+    // Find class name if class ID exists
+    let className = 'Not assigned';
+    if (student.classId) {
+      const classItem = classesList.find(c => c.id === student.classId);
+      if (classItem) {
+        className = classItem.name;
+      }
+    }
+    
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${student.id}</td>
       <td>${student.name}</td>
       <td>${student.grade}</td>
+      <td>${className}</td>
       <td>${student.email || student.phone || 'N/A'}</td>
       <td>
         <button class="btn btn-sm btn-outline-primary edit-student" data-id="${student.id}">
@@ -94,6 +144,9 @@ window.api.receive('studentsData', (students) => {
     `;
     studentsTableBody.appendChild(row);
   });
+  
+  // Update dashboard counts
+  updateDashboardCounts();
 });
 
 // TEACHER FUNCTIONS
@@ -119,6 +172,9 @@ window.api.receive('teachersData', (teachers) => {
     return;
   }
   
+  // Store teachers for class assignment
+  teachersList = teachers;
+  
   // Add teacher data to the table
   teachers.forEach(teacher => {
     const row = document.createElement('tr');
@@ -138,6 +194,72 @@ window.api.receive('teachersData', (teachers) => {
     `;
     teachersTableBody.appendChild(row);
   });
+  
+  // Update dashboard counts
+  updateDashboardCounts();
+});
+
+// CLASS FUNCTIONS
+// Load classes data into the table
+function loadClassesData() {
+  // Clear existing table data
+  classesTableBody.innerHTML = '';
+  
+  // Show loading indicator
+  classesTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+  
+  // Request data from main process
+  window.api.send('getClasses');
+  
+  // Also load teachers for dropdown
+  window.api.send('getTeachers');
+}
+
+// Handle received classes data
+window.api.receive('classesData', (classes) => {
+  // Clear loading indicator
+  classesTableBody.innerHTML = '';
+  
+  if (classes.length === 0) {
+    classesTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No classes found</td></tr>';
+    return;
+  }
+  
+  // Store classes for student assignment
+  classesList = classes;
+  
+  // Add class data to the table
+  classes.forEach(classItem => {
+    // Find teacher name if teacher ID exists
+    let teacherName = 'Not assigned';
+    if (classItem.teacherId) {
+      const teacher = teachersList.find(t => t.id === classItem.teacherId);
+      if (teacher) {
+        teacherName = teacher.name;
+      }
+    }
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${classItem.id}</td>
+      <td>${classItem.name}</td>
+      <td>${classItem.subject || 'N/A'}</td>
+      <td>${teacherName}</td>
+      <td>${classItem.schedule || 'Not scheduled'}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary edit-class" data-id="${classItem.id}">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger delete-class" data-id="${classItem.id}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    classesTableBody.appendChild(row);
+  });
+  
+  // Update dashboard counts
+  updateDashboardCounts();
 });
 
 // Set up event listeners for various actions
@@ -187,6 +309,29 @@ function setupEventListeners() {
       }
     });
   }
+  
+  // Add class button
+  if (addClassBtn) {
+    addClassBtn.addEventListener('click', () => {
+      showClassModal();
+    });
+  }
+  
+  // Edit and delete class buttons (using event delegation)
+  if (classesTableBody) {
+    classesTableBody.addEventListener('click', (e) => {
+      const target = e.target.closest('button');
+      if (!target) return;
+      
+      const classId = target.getAttribute('data-id');
+      
+      if (target.classList.contains('edit-class')) {
+        editClass(classId);
+      } else if (target.classList.contains('delete-class')) {
+        deleteClass(classId);
+      }
+    });
+  }
 }
 
 // STUDENT MODAL FUNCTIONS
@@ -198,11 +343,11 @@ function showStudentModal(student = null) {
   
   // Create modal HTML
   const modalHtml = `
-    <div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">${modalTitle}</h5>
+            <h5 class="modal-title" id="studentModalLabel">${modalTitle}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -275,9 +420,22 @@ function showStudentModal(student = null) {
                 </div>
               </div>
               
-              <div class="mb-3">
-                <label for="student-enrollment-date" class="form-label">Enrollment Date</label>
-                <input type="date" class="form-control" id="student-enrollment-date" value="${isEditing && student.enrollment_date ? student.enrollment_date : new Date().toISOString().split('T')[0]}">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="student-enrollment-date" class="form-label">Enrollment Date</label>
+                  <input type="date" class="form-control" id="student-enrollment-date" value="${isEditing && student.enrollment_date ? student.enrollment_date : new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="student-class" class="form-label">Assigned Class</label>
+                  <select class="form-control" id="student-class">
+                    <option value="">Select Class</option>
+                    ${classesList.map(classItem => `
+                      <option value="${classItem.id}" ${isEditing && student.classId === classItem.id ? 'selected' : ''}>
+                        ${classItem.name} ${classItem.subject ? `(${classItem.subject})` : ''}
+                      </option>
+                    `).join('')}
+                  </select>
+                </div>
               </div>
             </form>
           </div>
@@ -324,6 +482,7 @@ function saveStudent(studentId = null) {
   const parentName = document.getElementById('student-parent-name').value;
   const parentContact = document.getElementById('student-parent-contact').value;
   const enrollmentDate = document.getElementById('student-enrollment-date').value;
+  const classId = document.getElementById('student-class').value;
   
   // Validate required fields
   if (!name || !grade) {
@@ -344,7 +503,8 @@ function saveStudent(studentId = null) {
     email,
     parent_name: parentName,
     parent_contact: parentContact,
-    enrollment_date: enrollmentDate
+    enrollment_date: enrollmentDate,
+    classId: classId || null
   };
   
   // Send to main process
@@ -360,6 +520,8 @@ window.api.receive('saveStudentResponse', (response) => {
   if (response.success) {
     // Reload students data
     loadStudentsData();
+    // Update dashboard counts
+    updateDashboardCounts();
   } else {
     alert('Error saving student: ' + response.error);
   }
@@ -394,6 +556,8 @@ window.api.receive('deleteStudentResponse', (response) => {
   if (response.success) {
     // Reload students data
     loadStudentsData();
+    // Update dashboard counts
+    updateDashboardCounts();
   } else {
     alert('Error deleting student: ' + response.error);
   }
@@ -549,6 +713,8 @@ window.api.receive('saveTeacherResponse', (response) => {
   if (response.success) {
     // Reload teachers data
     loadTeachersData();
+    // Update dashboard counts
+    updateDashboardCounts();
   } else {
     alert('Error saving teacher: ' + response.error);
   }
@@ -583,7 +749,204 @@ window.api.receive('deleteTeacherResponse', (response) => {
   if (response.success) {
     // Reload teachers data
     loadTeachersData();
+    // Update dashboard counts
+    updateDashboardCounts();
   } else {
     alert('Error deleting teacher: ' + response.error);
+  }
+}); 
+
+// CLASS MODAL FUNCTIONS
+// Show modal to add or edit a class
+function showClassModal(classItem = null) {
+  // Determine if we're adding or editing
+  const isEditing = classItem !== null;
+  const modalTitle = isEditing ? 'Edit Class' : 'Add New Class';
+  
+  // Create modal HTML
+  const modalHtml = `
+    <div class="modal fade" id="classModal" tabindex="-1" aria-labelledby="classModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="classModalLabel">${modalTitle}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="classForm">
+              <div class="mb-3">
+                <label for="className" class="form-label">Class Name</label>
+                <input type="text" class="form-control" id="className" value="${isEditing ? classItem.name : ''}" required>
+              </div>
+              <div class="mb-3">
+                <label for="classSubject" class="form-label">Subject</label>
+                <input type="text" class="form-control" id="classSubject" value="${isEditing && classItem.subject ? classItem.subject : ''}">
+              </div>
+              <div class="mb-3">
+                <label for="classTeacher" class="form-label">Teacher</label>
+                <select class="form-select" id="classTeacher">
+                  <option value="">Select Teacher</option>
+                  ${teachersList.map(teacher => `
+                    <option value="${teacher.id}" ${isEditing && classItem.teacherId === teacher.id ? 'selected' : ''}>
+                      ${teacher.name} ${teacher.subject ? `(${teacher.subject})` : ''}
+                    </option>
+                  `).join('')}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="classSchedule" class="form-label">Schedule</label>
+                <input type="text" class="form-control" id="classSchedule" 
+                  placeholder="e.g. Monday 9:00-10:30" 
+                  value="${isEditing && classItem.schedule ? classItem.schedule : ''}">
+              </div>
+              <div class="mb-3">
+                <label for="classRoom" class="form-label">Room</label>
+                <input type="text" class="form-control" id="classRoom" 
+                  value="${isEditing && classItem.room ? classItem.room : ''}">
+              </div>
+              <div class="mb-3">
+                <label for="classCapacity" class="form-label">Capacity</label>
+                <input type="number" class="form-control" id="classCapacity" min="1" 
+                  value="${isEditing && classItem.capacity ? classItem.capacity : '30'}">
+              </div>
+              <div class="mb-3">
+                <label for="classDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="classDescription" rows="3">${isEditing && classItem.description ? classItem.description : ''}</textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="saveClassBtn">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to the DOM
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  
+  // Create Bootstrap modal instance
+  const modalElement = document.getElementById('classModal');
+  const modal = new bootstrap.Modal(modalElement);
+  
+  // Show the modal
+  modal.show();
+  
+  // Add event listener to save button
+  document.getElementById('saveClassBtn').addEventListener('click', () => {
+    saveClass(isEditing ? classItem.id : null);
+  });
+  
+  // Remove modal from DOM after it's hidden
+  modalElement.addEventListener('hidden.bs.modal', () => {
+    modalElement.remove();
+  });
+}
+
+// Save class data
+function saveClass(classId = null) {
+  // Get form values
+  const name = document.getElementById('className').value.trim();
+  const subject = document.getElementById('classSubject').value.trim();
+  const teacherId = document.getElementById('classTeacher').value;
+  const schedule = document.getElementById('classSchedule').value.trim();
+  const room = document.getElementById('classRoom').value.trim();
+  const capacity = document.getElementById('classCapacity').value;
+  const description = document.getElementById('classDescription').value.trim();
+  
+  // Validate form
+  if (!name) {
+    alert('Please enter a class name');
+    return;
+  }
+  
+  // Prepare class data
+  const classData = {
+    name,
+    subject,
+    teacherId: teacherId || null,
+    schedule,
+    room,
+    capacity: parseInt(capacity) || 30,
+    description,
+    isNew: !classId
+  };
+  
+  // If editing, add the ID
+  if (classId) {
+    classData.id = classId;
+  }
+  
+  // Send data to main process
+  window.api.send('saveClass', classData);
+  
+  // Hide the modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('classModal'));
+  modal.hide();
+}
+
+// Handle save class response
+window.api.receive('saveClassResponse', (response) => {
+  if (response.success) {
+    // Reload classes data
+    loadClassesData();
+    // Update dashboard counts
+    updateDashboardCounts();
+  } else {
+    alert(`Error saving class: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Edit class
+function editClass(classId) {
+  // Set current editing class ID
+  currentEditingClassId = classId;
+  
+  // Request class data from main process
+  window.api.send('getClass', classId);
+}
+
+// Handle get class response
+window.api.receive('getClassResponse', (classItem) => {
+  if (classItem) {
+    showClassModal(classItem);
+  } else {
+    alert('Class not found');
+  }
+});
+
+// Delete class
+function deleteClass(classId) {
+  // Confirm deletion
+  if (confirm('Are you sure you want to delete this class?')) {
+    // Send delete request to main process
+    window.api.send('deleteClass', classId);
+  }
+}
+
+// Handle delete class response
+window.api.receive('deleteClassResponse', (response) => {
+  if (response.success) {
+    // Reload classes data
+    loadClassesData();
+    // Update dashboard counts
+    updateDashboardCounts();
+  } else {
+    alert(`Error deleting class: ${response.error || 'Unknown error'}`);
+  }
+});
+
+// Handle students in class response
+window.api.receive('studentsInClassResponse', (response) => {
+  const { classId, students } = response;
+  
+  // Display students in a modal or other UI element
+  if (students.length > 0) {
+    // Implementation for displaying students in class
+    console.log(`Students in class ${classId}:`, students);
+  } else {
+    alert(`No students enrolled in this class.`);
   }
 }); 

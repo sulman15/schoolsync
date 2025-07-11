@@ -272,6 +272,96 @@ ipcMain.on('deleteTeacher', (event, teacherId) => {
   }
 });
 
+// CLASS OPERATIONS
+// Handle class data requests
+ipcMain.on('getClasses', (event) => {
+  try {
+    const classes = database.classes.getAll();
+    event.sender.send('classesData', classes);
+  } catch (error) {
+    console.error('Error fetching classes:', error);
+    event.sender.send('classesData', []);
+  }
+});
+
+// Handle get single class request
+ipcMain.on('getClass', (event, classId) => {
+  try {
+    const classItem = database.classes.getById(classId);
+    event.sender.send('getClassResponse', classItem);
+  } catch (error) {
+    console.error('Error fetching class:', error);
+    event.sender.send('getClassResponse', null);
+  }
+});
+
+// Handle class creation/update
+ipcMain.on('saveClass', (event, classData) => {
+  try {
+    let result;
+    
+    if (classData.isNew) {
+      // Generate a new ID for the class (format: C001, C002, etc.)
+      const classes = database.classes.getAll();
+      const lastId = classes.length > 0 
+        ? Math.max(...classes.map(c => parseInt(c.id.substring(1) || '0'))) 
+        : 0;
+      const newId = `C${String(lastId + 1).padStart(3, '0')}`;
+      
+      // Add timestamp
+      classData.id = newId;
+      classData.created_at = new Date().toISOString();
+      classData.updated_at = new Date().toISOString();
+      
+      result = database.classes.create(classData);
+    } else {
+      // Update timestamp
+      classData.updated_at = new Date().toISOString();
+      result = database.classes.update(classData.id, classData);
+    }
+    
+    event.sender.send('saveClassResponse', { success: true, class: result });
+  } catch (error) {
+    console.error('Error saving class:', error);
+    event.sender.send('saveClassResponse', { success: false, error: error.message });
+  }
+});
+
+// Handle class deletion
+ipcMain.on('deleteClass', (event, classId) => {
+  try {
+    const result = database.classes.delete(classId);
+    event.sender.send('deleteClassResponse', { 
+      success: result.changes > 0,
+      id: classId
+    });
+  } catch (error) {
+    console.error('Error deleting class:', error);
+    event.sender.send('deleteClassResponse', { 
+      success: false, 
+      error: error.message,
+      id: classId
+    });
+  }
+});
+
+// Handle get students in class request
+ipcMain.on('getStudentsInClass', (event, classId) => {
+  try {
+    const students = database.classes.getStudentsInClass(classId);
+    event.sender.send('studentsInClassResponse', { 
+      classId,
+      students
+    });
+  } catch (error) {
+    console.error('Error fetching students in class:', error);
+    event.sender.send('studentsInClassResponse', { 
+      classId,
+      students: []
+    });
+  }
+});
+
 // Clean up resources when app is about to quit
 app.on('before-quit', () => {
   // Close the database connection (no-op for JSON files)

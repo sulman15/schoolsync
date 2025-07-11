@@ -214,6 +214,66 @@ const teachersDb = {
   }
 };
 
+// Database CRUD operations for Classes
+const classesDb = {
+  // Get all classes
+  getAll: () => {
+    return readDbFile(dbFiles.classes);
+  },
+  
+  // Get a class by ID
+  getById: (id) => {
+    const classes = readDbFile(dbFiles.classes);
+    return classes.find(classItem => classItem.id === id);
+  },
+  
+  // Create a new class
+  create: (classData) => {
+    const classes = readDbFile(dbFiles.classes);
+    classes.push(classData);
+    if (writeDbFile(dbFiles.classes, classes)) {
+      return { id: classData.id, changes: 1 };
+    }
+    return { id: classData.id, changes: 0 };
+  },
+  
+  // Update a class
+  update: (id, classData) => {
+    const classes = readDbFile(dbFiles.classes);
+    const index = classes.findIndex(classItem => classItem.id === id);
+    
+    if (index !== -1) {
+      classes[index] = { ...classes[index], ...classData, updated_at: new Date().toISOString() };
+      if (writeDbFile(dbFiles.classes, classes)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  },
+  
+  // Delete a class
+  delete: (id) => {
+    const classes = readDbFile(dbFiles.classes);
+    const initialLength = classes.length;
+    const filteredClasses = classes.filter(classItem => classItem.id !== id);
+    
+    if (filteredClasses.length < initialLength) {
+      if (writeDbFile(dbFiles.classes, filteredClasses)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  },
+  
+  // Get students in a class
+  getStudentsInClass: (classId) => {
+    const students = readDbFile(dbFiles.students);
+    return students.filter(student => student.classId === classId);
+  }
+};
+
 // User authentication operations
 const usersDb = {
   // Find user by username and password
@@ -238,6 +298,7 @@ const usersDb = {
 module.exports = {
   students: studentsDb,
   teachers: teachersDb,
+  classes: classesDb,
   users: usersDb,
   
   // Close function (no-op for file-based storage)
