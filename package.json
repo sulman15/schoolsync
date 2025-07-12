@@ -4,11 +4,46 @@
   "description": "School Management System",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --x64",
+    "build:win-portable": "electron-builder --win portable"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^28.0.0"
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "electron-pdf": "^25.0.0",
+    "jimp": "^0.22.10",
+    "png-to-ico": "^2.1.8"
+  },
+  "build": {
+    "appId": "com.schoolsync.app",
+    "productName": "SchoolSync",
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "assets/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SchoolSync"
+    },
+    "portable": {
+      "artifactName": "SchoolSync-Portable.exe"
+    }
   }
 }

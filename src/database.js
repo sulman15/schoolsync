@@ -32,7 +32,8 @@ const dbFiles = {
   attendance: path.join(userDataPath, 'attendance.json'),
   grades: path.join(userDataPath, 'grades.json'),
   settings: path.join(userDataPath, 'settings.json'),
-  qualifications: path.join(userDataPath, 'qualifications.json')
+  qualifications: path.join(userDataPath, 'qualifications.json'),
+  fees: path.join(userDataPath, 'fees.json')
 };
 
 // Initialize database files if they don't exist
@@ -116,6 +117,19 @@ function initializeDatabase() {
     fs.writeFileSync(dbFiles.settings, JSON.stringify(defaultSettings, null, 2));
     console.log('Default settings created');
   }
+  
+  // Initialize fees.json
+  if (!fs.existsSync(dbFiles.fees)) {
+    fs.writeFileSync(dbFiles.fees, JSON.stringify([], null, 2));
+    console.log('Fees database initialized');
+  }
+  
+  // Create photos directory if it doesn't exist
+  const photosDir = path.join(userDataPath, 'photos');
+  if (!fs.existsSync(photosDir)) {
+    fs.mkdirSync(photosDir, { recursive: true });
+    console.log('Photos directory created');
+  }
 }
 
 // Initialize the database
@@ -194,6 +208,54 @@ const studentsDb = {
     }
     
     return { id, changes: 0 };
+  },
+  
+  // Save student photo
+  savePhoto: (studentId, photoData, extension) => {
+    try {
+      const photosDir = path.join(userDataPath, 'photos');
+      if (!fs.existsSync(photosDir)) {
+        fs.mkdirSync(photosDir, { recursive: true });
+      }
+      
+      const photoFileName = `student_${studentId}.${extension}`;
+      const photoPath = path.join(photosDir, photoFileName);
+      
+      // Convert base64 data to buffer and save
+      const base64Data = photoData.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      fs.writeFileSync(photoPath, buffer);
+      
+      // Update student record with photo path
+      const students = readDbFile(dbFiles.students);
+      const index = students.findIndex(student => student.id === studentId);
+      
+      if (index !== -1) {
+        students[index].photo = `photos/${photoFileName}`;
+        writeDbFile(dbFiles.students, students);
+      }
+      
+      return { success: true, photoPath: `photos/${photoFileName}` };
+    } catch (error) {
+      console.error('Error saving student photo:', error);
+      return { success: false, error: error.message };
+    }
+  },
+  
+  // Get student photo
+  getPhoto: (photoPath) => {
+    try {
+      const fullPath = path.join(userDataPath, photoPath);
+      if (fs.existsSync(fullPath)) {
+        const data = fs.readFileSync(fullPath);
+        return { success: true, data };
+      } else {
+        return { success: false, error: 'Photo not found' };
+      }
+    } catch (error) {
+      console.error('Error getting student photo:', error);
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -752,6 +814,116 @@ const qualificationsDb = {
   }
 };
 
+// Database CRUD operations for Fees
+const feesDb = {
+  // Get all fees
+  getAll: () => {
+    return readDbFile(dbFiles.fees);
+  },
+  
+  // Get fees by student ID
+  getByStudentId: (studentId) => {
+    const fees = readDbFile(dbFiles.fees);
+    return fees.filter(fee => fee.studentId === studentId);
+  },
+  
+  // Get fees by month and year
+  getByMonthYear: (month, year) => {
+    const fees = readDbFile(dbFiles.fees);
+    return fees.filter(fee => fee.month === month && fee.year === year);
+  },
+  
+  // Get fees by status
+  getByStatus: (status) => {
+    const fees = readDbFile(dbFiles.fees);
+    return fees.filter(fee => fee.status === status);
+  },
+  
+  // Create a new fee record
+  create: (feeData) => {
+    const fees = readDbFile(dbFiles.fees);
+    
+    // Generate a unique ID for the fee record
+    const lastId = fees.length > 0 
+      ? Math.max(...fees.map(f => parseInt(f.id.substring(1)) || 0)) 
+      : 0;
+    const newId = `F${String(lastId + 1).padStart(4, '0')}`;
+    
+    // Add metadata
+    feeData.id = newId;
+    feeData.created_at = new Date().toISOString();
+    feeData.updated_at = new Date().toISOString();
+    
+    fees.push(feeData);
+    
+    if (writeDbFile(dbFiles.fees, fees)) {
+      return { id: newId, changes: 1 };
+    }
+    return { id: newId, changes: 0 };
+  },
+  
+  // Update a fee record
+  update: (id, feeData) => {
+    const fees = readDbFile(dbFiles.fees);
+    const index = fees.findIndex(fee => fee.id === id);
+    
+    if (index !== -1) {
+      fees[index] = { ...fees[index], ...feeData, updated_at: new Date().toISOString() };
+      if (writeDbFile(dbFiles.fees, fees)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  },
+  
+  // Delete a fee record
+  delete: (id) => {
+    const fees = readDbFile(dbFiles.fees);
+    const initialLength = fees.length;
+    const filteredFees = fees.filter(fee => fee.id !== id);
+    
+    if (filteredFees.length < initialLength) {
+      if (writeDbFile(dbFiles.fees, filteredFees)) {
+        return { id, changes: 1 };
+      }
+    }
+    
+    return { id, changes: 0 };
+  },
+  
+  // Get fee summary statistics
+  getSummary: () => {
+    const fees = readDbFile(dbFiles.fees);
+    
+    let totalAmount = 0;
+    let collectedAmount = 0;
+    let pendingAmount = 0;
+    let overdueAmount = 0;
+    
+    fees.forEach(fee => {
+      const netAmount = fee.amount - (fee.amount * fee.discount / 100);
+      
+      totalAmount += netAmount;
+      
+      if (fee.status === 'Paid') {
+        collectedAmount += netAmount;
+      } else if (fee.status === 'Pending') {
+        pendingAmount += netAmount;
+      } else if (fee.status === 'Overdue') {
+        overdueAmount += netAmount;
+      }
+    });
+    
+    return {
+      totalAmount,
+      collectedAmount,
+      pendingAmount,
+      overdueAmount
+    };
+  }
+};
+
 // Backup and restore operations
 const backupDb = {
   // Create a backup of all data
@@ -887,6 +1059,7 @@ module.exports = {
   users: usersDb,
   settings: settingsDb,
   qualifications: qualificationsDb,
+  fees: feesDb,
   backup: backupDb,
   
   // Close function (no-op for file-based storage)

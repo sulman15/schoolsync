@@ -65,6 +65,14 @@ function createMainWindow() {
     if (loginWindow) {
       loginWindow.close();
     }
+    
+    // Load settings and send to renderer when window is ready
+    try {
+      const settings = database.settings.getAll();
+      mainWindow.webContents.send('settingsData', settings);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
   });
 
   // Handle window close
@@ -197,6 +205,29 @@ ipcMain.on('deleteStudent', (event, studentId) => {
       error: error.message,
       id: studentId
     });
+  }
+});
+
+// Handle student photo upload
+ipcMain.on('uploadStudentPhoto', (event, data) => {
+  try {
+    const { studentId, photoData, extension } = data;
+    const result = database.students.savePhoto(studentId, photoData, extension);
+    event.sender.send('uploadStudentPhotoResponse', result);
+  } catch (error) {
+    console.error('Error uploading student photo:', error);
+    event.sender.send('uploadStudentPhotoResponse', { success: false, error: error.message });
+  }
+});
+
+// Handle student photo request
+ipcMain.on('getStudentPhoto', (event, photoPath) => {
+  try {
+    const result = database.students.getPhoto(photoPath);
+    event.sender.send('getStudentPhotoResponse', result);
+  } catch (error) {
+    console.error('Error getting student photo:', error);
+    event.sender.send('getStudentPhotoResponse', { success: false, error: error.message });
   }
 });
 
@@ -679,7 +710,7 @@ ipcMain.on('getSettings', (event) => {
     event.sender.send('settingsData', settings);
   } catch (error) {
     console.error('Error fetching settings:', error);
-    event.sender.send('settingsData', null);
+    event.sender.send('settingsData', {});
   }
 });
 
@@ -966,6 +997,137 @@ ipcMain.on('selectLogo', async (event) => {
   } catch (error) {
     console.error('Error selecting logo:', error);
     event.sender.send('logoSelected', { success: false, error: error.message });
+  }
+});
+
+// FEE OPERATIONS
+// Handle get all fees request
+ipcMain.on('getFees', (event) => {
+  try {
+    const fees = database.fees.getAll();
+    event.sender.send('feesData', fees);
+  } catch (error) {
+    console.error('Error fetching fees:', error);
+    event.sender.send('feesData', []);
+  }
+});
+
+// Handle get fees by student ID
+ipcMain.on('getFeesByStudent', (event, studentId) => {
+  try {
+    const fees = database.fees.getByStudentId(studentId);
+    event.sender.send('feesByStudentData', fees);
+  } catch (error) {
+    console.error('Error fetching student fees:', error);
+    event.sender.send('feesByStudentData', []);
+  }
+});
+
+// Handle get fees by month and year
+ipcMain.on('getFeesByMonthYear', (event, data) => {
+  try {
+    const { month, year } = data;
+    const fees = database.fees.getByMonthYear(month, year);
+    event.sender.send('feesByMonthYearData', fees);
+  } catch (error) {
+    console.error('Error fetching fees by month/year:', error);
+    event.sender.send('feesByMonthYearData', []);
+  }
+});
+
+// Handle get fees by status
+ipcMain.on('getFeesByStatus', (event, status) => {
+  try {
+    const fees = database.fees.getByStatus(status);
+    event.sender.send('feesByStatusData', fees);
+  } catch (error) {
+    console.error('Error fetching fees by status:', error);
+    event.sender.send('feesByStatusData', []);
+  }
+});
+
+// Handle fee creation/update
+ipcMain.on('saveFee', (event, feeData) => {
+  try {
+    let result;
+    
+    if (feeData.isNew) {
+      // Remove isNew flag before saving
+      const { isNew, ...dataToSave } = feeData;
+      result = database.fees.create(dataToSave);
+    } else {
+      // Remove isNew flag before saving
+      const { isNew, ...dataToSave } = feeData;
+      result = database.fees.update(feeData.id, dataToSave);
+    }
+    
+    event.sender.send('saveFeeResponse', { success: true, fee: result });
+  } catch (error) {
+    console.error('Error saving fee:', error);
+    event.sender.send('saveFeeResponse', { success: false, error: error.message });
+  }
+});
+
+// Handle fee deletion
+ipcMain.on('deleteFee', (event, feeId) => {
+  try {
+    const result = database.fees.delete(feeId);
+    event.sender.send('deleteFeeResponse', { 
+      success: result.changes > 0,
+      id: feeId
+    });
+  } catch (error) {
+    console.error('Error deleting fee:', error);
+    event.sender.send('deleteFeeResponse', { 
+      success: false, 
+      error: error.message,
+      id: feeId
+    });
+  }
+});
+
+// Handle get fee summary
+ipcMain.on('getFeeSummary', (event) => {
+  try {
+    const summary = database.fees.getSummary();
+    event.sender.send('feeSummaryData', summary);
+  } catch (error) {
+    console.error('Error fetching fee summary:', error);
+    event.sender.send('feeSummaryData', {
+      totalAmount: 0,
+      collectedAmount: 0,
+      pendingAmount: 0,
+      overdueAmount: 0
+    });
+  }
+});
+
+// PDF EXPORT OPERATIONS
+// Handle export to PDF request
+ipcMain.on('exportPDF', async (event, data) => {
+  try {
+    const { type, content, fileName } = data;
+    
+    // Show save dialog
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Save PDF',
+      defaultPath: fileName || 'export.pdf',
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+    });
+    
+    if (canceled || !filePath) {
+      event.sender.send('exportPDFResponse', { success: false, error: 'Export canceled' });
+      return;
+    }
+    
+    // Use content to generate PDF (this would require a PDF generation library)
+    // For now, we'll just create a simple text file as a placeholder
+    fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+    
+    event.sender.send('exportPDFResponse', { success: true, filePath });
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    event.sender.send('exportPDFResponse', { success: false, error: error.message });
   }
 });
 

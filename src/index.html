@@ -2,57 +2,160 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SchoolSync - School Management System</title>
   <link rel="stylesheet" href="styles/main.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <!-- Replace CDN with local files -->
+  <style>
+    /* Basic Bootstrap styles for offline use */
+    .container-fluid { width: 100%; padding-right: 15px; padding-left: 15px; margin-right: auto; margin-left: auto; }
+    .row { display: flex; flex-wrap: wrap; margin-right: -15px; margin-left: -15px; }
+    .col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-md-9 { position: relative; width: 100%; padding-right: 15px; padding-left: 15px; }
+    @media (min-width: 768px) {
+      .col-md-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
+      .col-md-3 { flex: 0 0 25%; max-width: 25%; }
+      .col-md-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+      .col-md-6 { flex: 0 0 50%; max-width: 50%; }
+      .col-md-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+      .col-md-9 { flex: 0 0 75%; max-width: 75%; }
+    }
+    .form-control { display: block; width: 100%; padding: .375rem .75rem; font-size: 1rem; line-height: 1.5; color: #495057; background-color: #fff; border: 1px solid #ced4da; border-radius: .25rem; }
+    .btn { display: inline-block; font-weight: 400; text-align: center; white-space: nowrap; vertical-align: middle; user-select: none; border: 1px solid transparent; padding: .375rem .75rem; font-size: 1rem; line-height: 1.5; border-radius: .25rem; }
+    .btn-primary { color: #fff; background-color: #2c3e50; border-color: #2c3e50; }
+    .btn-secondary { color: #fff; background-color: #6c757d; border-color: #6c757d; }
+    .table { width: 100%; margin-bottom: 1rem; color: #212529; border-collapse: collapse; }
+    .table th, .table td { padding: .75rem; vertical-align: top; border-top: 1px solid #dee2e6; }
+    .modal { position: fixed; top: 0; left: 0; z-index: 1050; display: none; width: 100%; height: 100%; overflow: hidden; outline: 0; }
+    .modal.fade .modal-dialog { transition: transform .3s ease-out; transform: translate(0,-50px); }
+    .modal.show .modal-dialog { transform: none; }
+    .modal-dialog { position: relative; width: auto; margin: .5rem; pointer-events: none; }
+    .modal-content { position: relative; display: flex; flex-direction: column; width: 100%; pointer-events: auto; background-color: #fff; background-clip: padding-box; border: 1px solid rgba(0,0,0,.2); border-radius: .3rem; outline: 0; }
+    .modal-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 1rem 1rem; border-bottom: 1px solid #dee2e6; border-top-left-radius: calc(.3rem - 1px); border-top-right-radius: calc(.3rem - 1px); }
+    .modal-body { position: relative; flex: 1 1 auto; padding: 1rem; }
+    .modal-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding: .75rem; border-top: 1px solid #dee2e6; }
+    
+    /* Additional Bootstrap styles for offline use */
+    .form-select { display: block; width: 100%; padding: .375rem 2.25rem .375rem .75rem; font-size: 1rem; line-height: 1.5; color: #495057; background-color: #fff; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right .75rem center; background-size: 16px 12px; border: 1px solid #ced4da; border-radius: .25rem; appearance: none; }
+    .btn-outline-primary { color: #2c3e50; background-color: transparent; border-color: #2c3e50; }
+    .btn-outline-primary:hover { color: #fff; background-color: #2c3e50; border-color: #2c3e50; }
+    .btn-outline-secondary { color: #6c757d; background-color: transparent; border-color: #6c757d; }
+    .btn-outline-secondary:hover { color: #fff; background-color: #6c757d; border-color: #6c757d; }
+    .btn-outline-danger { color: #dc3545; background-color: transparent; border-color: #dc3545; }
+    .btn-outline-danger:hover { color: #fff; background-color: #dc3545; border-color: #dc3545; }
+    .btn-success { color: #fff; background-color: #28a745; border-color: #28a745; }
+    .btn-success:hover { color: #fff; background-color: #218838; border-color: #1e7e34; }
+    .btn-sm { padding: .25rem .5rem; font-size: .875rem; line-height: 1.5; border-radius: .2rem; }
+    .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.05); }
+    .table-responsive { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .d-flex { display: flex; }
+    .justify-content-between { justify-content: space-between; }
+    .align-items-center { align-items: center; }
+    .align-items-end { align-items: flex-end; }
+    .mb-2 { margin-bottom: .5rem; }
+    .mb-3 { margin-bottom: 1rem; }
+    .mb-4 { margin-bottom: 1.5rem; }
+    .mt-2 { margin-top: .5rem; }
+    .mt-3 { margin-top: 1rem; }
+    .mt-4 { margin-top: 1.5rem; }
+    .mt-5 { margin-top: 3rem; }
+    .me-2 { margin-right: .5rem; }
+    .me-3 { margin-right: 1rem; }
+    .text-center { text-align: center; }
+    .text-end { text-align: right; }
+    .text-muted { color: #6c757d; }
+    .w-100 { width: 100%; }
+    .img-fluid { max-width: 100%; height: auto; }
+    .img-thumbnail { padding: .25rem; background-color: #fff; border: 1px solid #dee2e6; border-radius: .25rem; max-width: 100%; height: auto; }
+    .text-white { color: #fff; }
+    .text-white-50 { color: rgba(255, 255, 255, 0.5); }
+    .card { position: relative; display: flex; flex-direction: column; min-width: 0; word-wrap: break-word; background-color: #fff; background-clip: border-box; border: 1px solid rgba(0,0,0,.125); border-radius: .25rem; }
+    .card-body { flex: 1 1 auto; padding: 1.25rem; }
+    .card-title { margin-bottom: .75rem; }
+    .card-text { margin-top: 0; margin-bottom: 1rem; }
+    .bg-light { background-color: #f8f9fa; }
+    .bg-success { background-color: #28a745; }
+    .bg-warning { background-color: #ffc107; }
+    .bg-danger { background-color: #dc3545; }
+    .d-none { display: none; }
+    .d-block { display: block; }
+    .btn-close { box-sizing: content-box; width: 1em; height: 1em; padding: .25em .25em; color: #000; background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat; border: 0; border-radius: .25rem; opacity: .5; }
+    .g-0 { --bs-gutter-x: 0; }
+    .p-0 { padding: 0; }
+    .p-3 { padding: 1rem; }
+  </style>
+  <!-- Bootstrap icons replacement -->
+  <style>
+    /* Basic icon replacements */
+    .bi { display: inline-block; vertical-align: -0.125em; font-style: normal; margin-right: 5px; }
+    .bi-speedometer2::before { content: "📊"; }
+    .bi-people::before { content: "👥"; }
+    .bi-person-badge::before { content: "👨‍🏫"; }
+    .bi-calendar3::before { content: "📅"; }
+    .bi-check2-square::before { content: "✅"; }
+    .bi-cash-coin::before { content: "💰"; }
+    .bi-bar-chart::before { content: "📈"; }
+    .bi-gear::before { content: "⚙️"; }
+    .bi-plus::before { content: "+"; }
+    .bi-file-earmark-pdf::before { content: "📄"; }
+    .bi-camera::before { content: "📷"; }
+    .bi-printer::before { content: "🖨️"; }
+    .bi-funnel::before { content: "🔍"; }
+    .bi-cash::before { content: "💵"; }
+    .bi-save::before { content: "💾"; }
+    .bi-search::before { content: "🔎"; }
+    .bi-pencil::before { content: "✏️"; }
+    .bi-trash::before { content: "🗑️"; }
+  </style>
 </head>
 <body>
-  <div class="container-fluid">
-    <div class="row vh-100">
+  <div class="container-fluid p-0">
+    <div class="row g-0">
       <!-- Sidebar -->
-      <div class="col-md-2 text-white p-0 sidebar" style="background-color: #2c3e50;">
-        <div class="d-flex flex-column h-100">
-          <div class="p-3 text-center">
-            <img id="app-logo" src="assets/default-logo.png" alt="SchoolSync Logo" class="img-fluid mb-2" style="max-height: 80px;">
-            <h4 class="fs-5 mb-0">SchoolSync</h4>
-            <small class="text-muted">School Management System</small>
-          </div>
-          <nav class="nav flex-column mt-2">
-            <a href="#" class="nav-link active" data-page="dashboard">
-              <i class="bi bi-speedometer2 me-2"></i> Dashboard
-            </a>
-            <a href="#" class="nav-link" data-page="students">
-              <i class="bi bi-people me-2"></i> Students
-            </a>
-            <a href="#" class="nav-link" data-page="teachers">
-              <i class="bi bi-person-badge me-2"></i> Teachers
-            </a>
-            <a href="#" class="nav-link" data-page="classes">
-              <i class="bi bi-calendar3 me-2"></i> Classes
-            </a>
-            <a href="#" class="nav-link" data-page="attendance">
-              <i class="bi bi-check2-square me-2"></i> Attendance
-            </a>
-            <a href="#" class="nav-link" data-page="grades">
-              <i class="bi bi-bar-chart me-2"></i> Grades
-            </a>
-            <a href="#" class="nav-link" data-page="settings">
-              <i class="bi bi-gear me-2"></i> Settings
-            </a>
-          </nav>
+      <div class="sidebar">
+        <div class="app-logo-container">
+          <img id="app-logo" src="assets/default-logo.png" alt="SchoolSync Logo" class="img-fluid" style="max-height: 60px;">
         </div>
+        <div class="text-center mb-3">
+          <h5 class="mb-0">SchoolSync</h5>
+          <small class="text-white-50">School Management System</small>
+        </div>
+        <nav class="nav flex-column mt-2">
+          <a href="#" class="nav-link active" data-page="dashboard">
+            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+          </a>
+          <a href="#" class="nav-link" data-page="students">
+            <i class="bi bi-people me-2"></i> Students
+          </a>
+          <a href="#" class="nav-link" data-page="teachers">
+            <i class="bi bi-person-badge me-2"></i> Teachers
+          </a>
+          <a href="#" class="nav-link" data-page="classes">
+            <i class="bi bi-calendar3 me-2"></i> Classes
+          </a>
+          <a href="#" class="nav-link" data-page="attendance">
+            <i class="bi bi-check2-square me-2"></i> Attendance
+          </a>
+          <a href="#" class="nav-link" data-page="fees">
+            <i class="bi bi-cash-coin me-2"></i> Fees
+          </a>
+          <a href="#" class="nav-link" data-page="grades">
+            <i class="bi bi-bar-chart me-2"></i> Grades
+          </a>
+          <a href="#" class="nav-link" data-page="settings">
+            <i class="bi bi-gear me-2"></i> Settings
+          </a>
+        </nav>
       </div>
 
       <!-- Main Content Area -->
-      <div class="col-md-10 ms-sm-auto col-lg-10 px-md-4 main-content">
+      <div class="main-content">
         <div id="content-area">
           <!-- Content will be loaded here dynamically -->
           <div id="dashboard" class="content-page active">
             <h2>Dashboard</h2>
             <div class="row mt-4">
-              <div class="col-md-4">
-                <div class="card">
+              <div class="col-md-4 mb-4">
+                <div class="card dashboard-card">
                   <div class="card-body">
                     <h5 class="card-title">Students</h5>
                     <h2 class="card-text" id="student-count">0</h2>
@@ -60,8 +163,8 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="card">
+              <div class="col-md-4 mb-4">
+                <div class="card dashboard-card">
                   <div class="card-body">
                     <h5 class="card-title">Teachers</h5>
                     <h2 class="card-text" id="teacher-count">0</h2>
@@ -69,8 +172,8 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="card">
+              <div class="col-md-4 mb-4">
+                <div class="card dashboard-card">
                   <div class="card-body">
                     <h5 class="card-title">Classes</h5>
                     <h2 class="card-text" id="class-count">0</h2>
@@ -84,76 +187,337 @@
           <div id="students" class="content-page">
             <h2>Student Management</h2>
             <div class="d-flex justify-content-between mb-3">
-              <input type="text" id="student-search-input" class="form-control w-25" placeholder="Search students...">
-              <button class="btn btn-primary" id="add-student-btn">
-                <i class="bi bi-plus"></i> Add New Student
-              </button>
+              <input type="text" id="student-search-input" class="form-control" style="max-width: 250px;" placeholder="Search students...">
+              <div>
+                <button class="btn btn-primary" id="add-student-btn">
+                  <i class="bi bi-plus"></i> Add New Student
+                </button>
+                <button class="btn btn-outline-secondary export-pdf-btn" id="export-students-pdf">
+                  <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </button>
+              </div>
             </div>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Grade</th>
-                  <th>Class</th>
-                  <th>Contact</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="students-table-body">
-                <!-- Student data will be loaded here -->
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Photo</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    <th>Class</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="students-table-body">
+                  <!-- Student data will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- Student Modal -->
+          <div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="studentModalLabel">Add New Student</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="student-form">
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="photo-upload-container">
+                          <img id="student-photo-preview" src="assets/default-logo.png" class="student-photo" alt="Student Photo">
+                          <button type="button" class="btn btn-sm btn-outline-primary photo-upload-btn" id="upload-student-photo">
+                            <i class="bi bi-camera"></i> Upload Photo
+                          </button>
+                          <input type="file" id="student-photo-input" accept="image/*" style="display: none;">
+                        </div>
+                      </div>
+                      <div class="col-md-8">
+                        <div class="mb-3">
+                          <label for="student-name" class="form-label">Full Name</label>
+                          <input type="text" class="form-control" id="student-name" required>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="student-grade" class="form-label">Grade</label>
+                              <input type="text" class="form-control" id="student-grade">
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="student-class" class="form-label">Class</label>
+                              <select class="form-select" id="student-class">
+                                <option value="">Select Class</option>
+                                <!-- Classes will be loaded here -->
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="student-dob" class="form-label">Date of Birth</label>
+                          <input type="date" class="form-control" id="student-dob">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="student-gender" class="form-label">Gender</label>
+                          <select class="form-select" id="student-gender">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="student-email" class="form-label">Email</label>
+                          <input type="email" class="form-control" id="student-email">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="student-phone" class="form-label">Phone</label>
+                          <input type="tel" class="form-control" id="student-phone">
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="student-address" class="form-label">Address</label>
+                      <textarea class="form-control" id="student-address" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="parent-name" class="form-label">Parent/Guardian Name</label>
+                          <input type="text" class="form-control" id="parent-name">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="parent-contact" class="form-label">Parent/Guardian Contact</label>
+                          <input type="tel" class="form-control" id="parent-contact">
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Fee Information -->
+                    <h5 class="mt-4 mb-3">Fee Information</h5>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="mb-3">
+                          <label for="fee-amount" class="form-label">Fee Amount</label>
+                          <input type="number" class="form-control" id="fee-amount" step="0.01">
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="mb-3">
+                          <label for="fee-discount" class="form-label">Discount (%)</label>
+                          <input type="number" class="form-control" id="fee-discount" min="0" max="100" value="0">
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="mb-3">
+                          <label for="fee-cycle" class="form-label">Payment Cycle</label>
+                          <select class="form-select" id="fee-cycle">
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Annually">Annually</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-notes" class="form-label">Fee Notes</label>
+                      <textarea class="form-control" id="fee-notes" rows="2"></textarea>
+                    </div>
+                    
+                    <input type="hidden" id="student-id">
+                    <input type="hidden" id="student-photo-path">
+                    <input type="hidden" id="student-is-new" value="true">
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="save-student-btn">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Student Details Modal -->
+          <div class="modal fade" id="studentDetailsModal" tabindex="-1" aria-labelledby="studentDetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="studentDetailsModalLabel">Student Details</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-md-4 text-center">
+                      <img id="detail-student-photo" src="assets/default-logo.png" class="student-photo mb-3" alt="Student Photo">
+                      <h5 id="detail-student-name">Student Name</h5>
+                      <p id="detail-student-id" class="text-muted">ID: S001</p>
+                    </div>
+                    <div class="col-md-8">
+                      <div class="row mb-2">
+                        <div class="col-md-6">
+                          <strong>Grade:</strong> <span id="detail-student-grade"></span>
+                        </div>
+                        <div class="col-md-6">
+                          <strong>Class:</strong> <span id="detail-student-class"></span>
+                        </div>
+                      </div>
+                      <div class="row mb-2">
+                        <div class="col-md-6">
+                          <strong>Date of Birth:</strong> <span id="detail-student-dob"></span>
+                        </div>
+                        <div class="col-md-6">
+                          <strong>Gender:</strong> <span id="detail-student-gender"></span>
+                        </div>
+                      </div>
+                      <div class="row mb-2">
+                        <div class="col-md-6">
+                          <strong>Email:</strong> <span id="detail-student-email"></span>
+                        </div>
+                        <div class="col-md-6">
+                          <strong>Phone:</strong> <span id="detail-student-phone"></span>
+                        </div>
+                      </div>
+                      <div class="mb-2">
+                        <strong>Address:</strong> <span id="detail-student-address"></span>
+                      </div>
+                      <div class="row mb-2">
+                        <div class="col-md-6">
+                          <strong>Parent/Guardian:</strong> <span id="detail-parent-name"></span>
+                        </div>
+                        <div class="col-md-6">
+                          <strong>Contact:</strong> <span id="detail-parent-contact"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Fee Information -->
+                  <div class="mt-4">
+                    <h5>Fee Information</h5>
+                    <div class="row mb-2">
+                      <div class="col-md-4">
+                        <strong>Fee Amount:</strong> <span id="detail-fee-amount"></span>
+                      </div>
+                      <div class="col-md-4">
+                        <strong>Discount:</strong> <span id="detail-fee-discount"></span>%
+                      </div>
+                      <div class="col-md-4">
+                        <strong>Payment Cycle:</strong> <span id="detail-fee-cycle"></span>
+                      </div>
+                    </div>
+                    <div class="mb-2">
+                      <strong>Fee Notes:</strong> <span id="detail-fee-notes"></span>
+                    </div>
+                  </div>
+                  
+                  <!-- Fee Payment History -->
+                  <div class="mt-4">
+                    <h5>Fee Payment History</h5>
+                    <div class="table-responsive">
+                      <table class="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Receipt</th>
+                          </tr>
+                        </thead>
+                        <tbody id="fee-history-table">
+                          <!-- Fee history will be loaded here -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-primary" id="export-student-pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                  </button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" id="edit-student-details-btn">Edit</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div id="teachers" class="content-page">
             <h2>Teacher Management</h2>
             <div class="d-flex justify-content-between mb-3">
-              <input type="text" id="teacher-search-input" class="form-control w-25" placeholder="Search teachers...">
+              <input type="text" id="teacher-search-input" class="form-control" style="max-width: 250px;" placeholder="Search teachers...">
               <button class="btn btn-primary" id="add-teacher-btn">
                 <i class="bi bi-plus"></i> Add New Teacher
               </button>
             </div>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Subject</th>
-                  <th>Qualification</th>
-                  <th>Contact</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="teachers-table-body">
-                <!-- Teacher data will be loaded here -->
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Subject</th>
+                    <th>Qualification</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="teachers-table-body">
+                  <!-- Teacher data will be loaded here -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div id="classes" class="content-page">
             <h2>Class Management</h2>
             <div class="d-flex justify-content-between mb-3">
-              <input type="text" id="class-search-input" class="form-control w-25" placeholder="Search classes...">
+              <input type="text" id="class-search-input" class="form-control" style="max-width: 250px;" placeholder="Search classes...">
               <button class="btn btn-primary" id="add-class-btn">
                 <i class="bi bi-plus"></i> Add New Class
               </button>
             </div>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Subject</th>
-                  <th>Teacher</th>
-                  <th>Schedule</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="classes-table-body">
-                <!-- Class data will be loaded here -->
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Subject</th>
+                    <th>Teacher</th>
+                    <th>Schedule</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="classes-table-body">
+                  <!-- Class data will be loaded here -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div id="attendance" class="content-page">
@@ -189,37 +553,41 @@
                 </button>
               </div>
               
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Student Name</th>
-                    <th>Status</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-                <tbody id="attendance-table-body">
-                  <!-- Attendance data will be loaded here -->
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student Name</th>
+                      <th>Status</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="attendance-table-body">
+                    <!-- Attendance data will be loaded here -->
+                  </tbody>
+                </table>
+              </div>
             </div>
             
             <div id="attendance-history" class="mt-5">
               <h4>Recent Attendance Records</h4>
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Class</th>
-                    <th>Present</th>
-                    <th>Absent</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="attendance-history-body">
-                  <!-- Attendance history will be loaded here -->
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Class</th>
+                      <th>Present</th>
+                      <th>Absent</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="attendance-history-body">
+                    <!-- Attendance history will be loaded here -->
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -248,109 +616,400 @@
               <div class="d-flex justify-content-between mb-3">
                 <h4>Assignments for <span id="grades-class-name"></span></h4>
                 <button class="btn btn-primary" id="add-assignment-btn">
-                  <i class="bi bi-plus"></i> Add New Assignment
+                  <i class="bi bi-plus"></i> Add Assignment
                 </button>
               </div>
               
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Max Score</th>
-                    <th>Due Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="assignments-table-body">
-                  <!-- Assignments will be loaded here -->
-                </tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Type</th>
+                      <th>Due Date</th>
+                      <th>Max Score</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assignments-table-body">
+                    <!-- Assignments will be loaded here -->
+                  </tbody>
+                </table>
+              </div>
             </div>
             
-            <div id="assignment-grades-container" class="d-none mt-5">
+            <div id="assignment-grades-container" class="d-none mt-4">
               <div class="d-flex justify-content-between mb-3">
-                <h4>Grades for <span id="assignment-title"></span></h4>
+                <h4>Grades for: <span id="assignment-title"></span></h4>
                 <button class="btn btn-success" id="save-grades-btn">
                   <i class="bi bi-save"></i> Save Grades
                 </button>
               </div>
               
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Student Name</th>
+                      <th>Score</th>
+                      <th>Comments</th>
+                    </tr>
+                  </thead>
+                  <tbody id="grades-table-body">
+                    <!-- Grades will be loaded here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="card mt-5">
+              <div class="card-body">
+                <h4>Student Grade Report</h4>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="grade-report-student" class="form-label">Select Student</label>
+                    <select class="form-select" id="grade-report-student">
+                      <option value="">Select Student</option>
+                      <!-- Students will be loaded here -->
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="load-student-grades-btn">
+                      <i class="bi bi-search"></i> Load Grades
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div id="student-report-container" class="d-none mt-4">
+              <div class="card">
+                <div class="card-body">
+                  <h4>Grade Report for <span id="report-student-name"></span></h4>
+                  <h5>Overall Grade: <span id="report-overall-grade"></span></h5>
+                  
+                  <div class="table-responsive mt-3">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Class</th>
+                          <th>Assignment</th>
+                          <th>Type</th>
+                          <th>Score</th>
+                          <th>Max Score</th>
+                          <th>Percentage</th>
+                        </tr>
+                      </thead>
+                      <tbody id="student-grades-table-body">
+                        <!-- Student grades will be loaded here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Fees Section -->
+          <div id="fees" class="content-page">
+            <h2>Fee Management</h2>
+            
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="fee-filter-class" class="form-label">Filter by Class</label>
+                    <select class="form-select" id="fee-filter-class">
+                      <option value="">All Classes</option>
+                      <!-- Classes will be loaded here -->
+                    </select>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="fee-filter-status" class="form-label">Filter by Status</label>
+                    <select class="form-select" id="fee-filter-status">
+                      <option value="">All Status</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Overdue">Overdue</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="fee-filter-month" class="form-label">Filter by Month</label>
+                    <select class="form-select" id="fee-filter-month">
+                      <option value="">All Months</option>
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7">July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <button class="btn btn-primary" id="apply-fee-filters">
+                    <i class="bi bi-funnel"></i> Apply Filters
+                  </button>
+                  <div>
+                    <button class="btn btn-success" id="collect-fees-btn">
+                      <i class="bi bi-cash"></i> Collect Fees
+                    </button>
+                    <button class="btn btn-outline-secondary export-pdf-btn" id="export-fees-pdf">
+                      <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="table-responsive">
               <table class="table table-striped">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>Student ID</th>
                     <th>Student Name</th>
-                    <th>Grade</th>
-                    <th>Feedback</th>
+                    <th>Class</th>
+                    <th>Fee Amount</th>
+                    <th>Discount</th>
+                    <th>Net Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody id="grades-table-body">
-                  <!-- Grades data will be loaded here -->
+                <tbody id="fees-table-body">
+                  <!-- Fee data will be loaded here -->
                 </tbody>
               </table>
             </div>
             
-            <div id="student-grades-view" class="d-none mt-5">
-              <h4>Student Grade Report</h4>
-              <div class="card mb-4">
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      <label for="grade-report-student" class="form-label">Select Student</label>
-                      <select class="form-select" id="grade-report-student">
-                        <option value="">Select Student</option>
-                        <!-- Students will be loaded here -->
-                      </select>
+            <div class="card mt-4">
+              <div class="card-body">
+                <h5>Fee Summary</h5>
+                <div class="row">
+                  <div class="col-md-3 mb-3">
+                    <div class="card bg-light">
+                      <div class="card-body text-center">
+                        <h6>Total Fees</h6>
+                        <h4 id="total-fees-amount">$0.00</h4>
+                      </div>
                     </div>
-                    <div class="col-md-6 mb-3 d-flex align-items-end">
-                      <button class="btn btn-primary w-100" id="load-student-grades-btn">
-                        <i class="bi bi-search"></i> View Grades
-                      </button>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                      <div class="card-body text-center">
+                        <h6>Collected</h6>
+                        <h4 id="collected-fees-amount">$0.00</h4>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <div class="card bg-warning">
+                      <div class="card-body text-center">
+                        <h6>Pending</h6>
+                        <h4 id="pending-fees-amount">$0.00</h4>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <div class="card bg-danger text-white">
+                      <div class="card-body text-center">
+                        <h6>Overdue</h6>
+                        <h4 id="overdue-fees-amount">$0.00</h4>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <div id="student-report-container" class="d-none">
-                <div class="card mb-4">
-                  <div class="card-body">
+            </div>
+          </div>
+          
+          <!-- Collect Fee Modal -->
+          <div class="modal fade" id="collectFeeModal" tabindex="-1" aria-labelledby="collectFeeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="collectFeeModalLabel">Collect Fee</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="collect-fee-form">
+                    <div class="mb-3">
+                      <label for="fee-student" class="form-label">Student</label>
+                      <select class="form-select" id="fee-student" required>
+                        <option value="">Select Student</option>
+                        <!-- Students will be loaded here -->
+                      </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-month" class="form-label">Month</label>
+                      <select class="form-select" id="fee-month" required>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-year" class="form-label">Year</label>
+                      <input type="number" class="form-control" id="fee-year" required>
+                    </div>
+                    
                     <div class="row">
                       <div class="col-md-6">
-                        <h5>Student: <span id="report-student-name"></span></h5>
+                        <div class="mb-3">
+                          <label for="fee-amount-display" class="form-label">Fee Amount</label>
+                          <input type="text" class="form-control" id="fee-amount-display" readonly>
+                        </div>
                       </div>
-                      <div class="col-md-6 text-end">
-                        <h5>Overall Grade: <span id="report-overall-grade"></span></h5>
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="fee-discount-display" class="form-label">Discount</label>
+                          <input type="text" class="form-control" id="fee-discount-display" readonly>
+                        </div>
                       </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-net-amount" class="form-label">Net Amount</label>
+                      <input type="text" class="form-control" id="fee-net-amount" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-payment-date" class="form-label">Payment Date</label>
+                      <input type="date" class="form-control" id="fee-payment-date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-payment-method" class="form-label">Payment Method</label>
+                      <select class="form-select" id="fee-payment-method" required>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Check">Check</option>
+                      </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-transaction-id" class="form-label">Transaction ID/Reference</label>
+                      <input type="text" class="form-control" id="fee-transaction-id">
+                    </div>
+                    
+                    <div class="mb-3">
+                      <label for="fee-remarks" class="form-label">Remarks</label>
+                      <textarea class="form-control" id="fee-remarks" rows="2"></textarea>
+                    </div>
+                    
+                    <input type="hidden" id="fee-id">
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-success" id="save-fee-payment-btn">Save Payment</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Fee Receipt Modal -->
+          <div class="modal fade" id="feeReceiptModal" tabindex="-1" aria-labelledby="feeReceiptModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="feeReceiptModalLabel">Fee Receipt</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="fee-receipt-content">
+                  <div class="text-center mb-4">
+                    <img id="receipt-school-logo" src="assets/default-logo.png" alt="School Logo" style="max-height: 80px;">
+                    <h4 id="receipt-school-name" class="mt-2">SchoolSync Academy</h4>
+                    <p id="receipt-school-address" class="mb-0">School Address</p>
+                    <p id="receipt-school-contact" class="mb-0">Phone: | Email: </p>
+                  </div>
+                  
+                  <div class="row mb-4">
+                    <div class="col-md-6">
+                      <h5>RECEIPT</h5>
+                      <p class="mb-1"><strong>Receipt No:</strong> <span id="receipt-no"></span></p>
+                      <p class="mb-1"><strong>Date:</strong> <span id="receipt-date"></span></p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                      <p class="mb-1"><strong>Student ID:</strong> <span id="receipt-student-id"></span></p>
+                      <p class="mb-1"><strong>Class:</strong> <span id="receipt-student-class"></span></p>
+                    </div>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <p><strong>Received from:</strong> <span id="receipt-student-name"></span></p>
+                  </div>
+                  
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td id="receipt-description">Fee for <span id="receipt-month-year"></span></td>
+                        <td class="text-end" id="receipt-fee-amount"></td>
+                      </tr>
+                      <tr>
+                        <td>Discount</td>
+                        <td class="text-end" id="receipt-discount"></td>
+                      </tr>
+                      <tr>
+                        <th>Total</th>
+                        <th class="text-end" id="receipt-total"></th>
+                      </tr>
+                    </tbody>
+                  </table>
+                  
+                  <div class="row mt-4">
+                    <div class="col-md-6">
+                      <p><strong>Payment Method:</strong> <span id="receipt-payment-method"></span></p>
+                      <p><strong>Transaction ID:</strong> <span id="receipt-transaction-id"></span></p>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-5">
+                      <p>Authorized Signature</p>
                     </div>
                   </div>
                 </div>
-                
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>Assignment</th>
-                      <th>Type</th>
-                      <th>Score</th>
-                      <th>Max Score</th>
-                      <th>Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody id="student-grades-table-body">
-                    <!-- Student grades will be loaded here -->
-                  </tbody>
-                </table>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-primary" id="print-receipt-btn">
+                    <i class="bi bi-printer"></i> Print
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" id="export-receipt-pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                  </button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
               </div>
             </div>
           </div>
 
           <div id="settings" class="content-page">
             <h2>Settings</h2>
-            
             <div class="row">
-              <div class="col-md-3 mb-4">
-                <!-- Settings Navigation -->
+              <div class="col-md-3">
                 <div class="list-group">
                   <a href="#" class="list-group-item list-group-item-action active" data-settings-tab="school-info">
                     School Information
@@ -361,7 +1020,7 @@
                   <a href="#" class="list-group-item list-group-item-action" data-settings-tab="system-preferences">
                     System Preferences
                   </a>
-                  <a href="#" class="list-group-item list-group-item-action" data-settings-tab="qualifications">
+                  <a href="#" class="list-group-item list-group-item-action" data-settings-tab="teacher-qualifications">
                     Teacher Qualifications
                   </a>
                   <a href="#" class="list-group-item list-group-item-action" data-settings-tab="backup-restore">
@@ -369,60 +1028,49 @@
                   </a>
                 </div>
               </div>
-              
               <div class="col-md-9">
-                <!-- School Information Settings -->
-                <div id="school-info-settings" class="settings-tab active">
-                  <div class="card">
-                    <div class="card-header">
-                      <h5 class="mb-0">School Information</h5>
-                    </div>
-                    <div class="card-body">
+                <div class="card">
+                  <div class="card-body">
+                    <!-- School Information Tab -->
+                    <div id="school-info" class="settings-tab active">
+                      <h4>School Information</h4>
                       <form id="school-info-form">
                         <div class="row mb-3">
                           <div class="col-md-6">
-                            <div class="mb-3">
-                              <label for="school-name" class="form-label">School Name</label>
-                              <input type="text" class="form-control" id="school-name">
-                            </div>
-                            <div class="mb-3">
-                              <label for="school-address" class="form-label">Address</label>
-                              <textarea class="form-control" id="school-address" rows="3"></textarea>
-                            </div>
-                            <div class="row">
-                              <div class="col-md-6 mb-3">
-                                <label for="school-phone" class="form-label">Phone</label>
-                                <input type="tel" class="form-control" id="school-phone">
-                              </div>
-                              <div class="col-md-6 mb-3">
-                                <label for="school-email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="school-email">
-                              </div>
-                            </div>
-                            <div class="mb-3">
-                              <label for="school-website" class="form-label">Website</label>
-                              <input type="url" class="form-control" id="school-website">
-                            </div>
-                            <div class="mb-3">
-                              <label for="school-principal" class="form-label">Principal Name</label>
-                              <input type="text" class="form-control" id="school-principal">
-                            </div>
+                            <label for="school-name" class="form-label">School Name</label>
+                            <input type="text" class="form-control" id="school-name" placeholder="Enter school name">
                           </div>
                           <div class="col-md-6">
-                            <div class="mb-3">
-                              <label class="form-label">School Logo</label>
-                              <div class="card p-3 text-center">
-                                <div id="logo-preview-container" class="mb-3">
-                                  <img id="school-logo-preview" src="assets/default-logo.png" alt="School Logo" class="img-fluid" style="max-height: 150px;">
-                                </div>
-                                <div class="mb-3">
-                                  <button type="button" class="btn btn-outline-primary" id="select-logo-btn">
-                                    <i class="bi bi-upload"></i> Select Logo
-                                  </button>
-                                </div>
-                                <small class="text-muted">Recommended size: 200x200 pixels. PNG or JPG format.</small>
-                              </div>
+                            <label class="form-label">School Logo</label>
+                            <div class="d-flex align-items-center">
+                              <img id="school-logo-preview" src="assets/default-logo.png" alt="School Logo" class="img-thumbnail me-3" style="max-height: 100px;">
+                              <button type="button" class="btn btn-outline-primary" id="select-logo-btn">Select Logo</button>
                             </div>
+                            <small class="text-muted">Recommended size: 200x200 pixels. PNG or JPG format.</small>
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label for="school-address" class="form-label">Address</label>
+                          <textarea class="form-control" id="school-address" rows="3" placeholder="Enter school address"></textarea>
+                        </div>
+                        <div class="row mb-3">
+                          <div class="col-md-6">
+                            <label for="school-phone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="school-phone" placeholder="Enter phone number">
+                          </div>
+                          <div class="col-md-6">
+                            <label for="school-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="school-email" placeholder="Enter email address">
+                          </div>
+                        </div>
+                        <div class="row mb-3">
+                          <div class="col-md-6">
+                            <label for="school-website" class="form-label">Website</label>
+                            <input type="url" class="form-control" id="school-website" placeholder="Enter website URL">
+                          </div>
+                          <div class="col-md-6">
+                            <label for="school-principal" class="form-label">Principal</label>
+                            <input type="text" class="form-control" id="school-principal" placeholder="Enter principal name">
                           </div>
                         </div>
                         <button type="button" class="btn btn-primary" id="save-school-info-btn">Save Information</button>
@@ -430,173 +1078,159 @@
                     </div>
                   </div>
                 </div>
-                
-                <!-- User Account Settings -->
-                <div id="user-account-settings" class="settings-tab">
-                  <div class="card">
-                    <div class="card-header">
-                      <h5 class="mb-0">User Account</h5>
-                    </div>
-                    <div class="card-body">
-                      <form id="user-account-form">
-                        <div class="mb-3">
-                          <label for="user-name" class="form-label">Name</label>
-                          <input type="text" class="form-control" id="user-name">
-                        </div>
-                        <div class="mb-3">
-                          <label for="user-email" class="form-label">Email</label>
-                          <input type="email" class="form-control" id="user-email">
-                        </div>
-                        <div class="mb-3">
-                          <label for="user-username" class="form-label">Username</label>
-                          <input type="text" class="form-control" id="user-username" readonly>
-                        </div>
-                        <hr>
-                        <h6>Change Password</h6>
-                        <div class="mb-3">
-                          <label for="current-password" class="form-label">Current Password</label>
-                          <input type="password" class="form-control" id="current-password">
-                        </div>
-                        <div class="mb-3">
-                          <label for="new-password" class="form-label">New Password</label>
-                          <input type="password" class="form-control" id="new-password">
-                        </div>
-                        <div class="mb-3">
-                          <label for="confirm-password" class="form-label">Confirm New Password</label>
-                          <input type="password" class="form-control" id="confirm-password">
-                        </div>
-                        <button type="button" class="btn btn-primary" id="save-user-account-btn">Save Changes</button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- System Preferences Settings -->
-                <div id="system-preferences-settings" class="settings-tab">
-                  <div class="card">
-                    <div class="card-header">
-                      <h5 class="mb-0">System Preferences</h5>
-                    </div>
-                    <div class="card-body">
-                      <form id="system-preferences-form">
-                        <div class="mb-3">
-                          <label class="form-label">Theme</label>
-                          <div class="form-check">
-                            <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" checked>
-                            <label class="form-check-label" for="theme-light">
-                              Light
-                            </label>
-                          </div>
-                          <div class="form-check">
-                            <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark">
-                            <label class="form-check-label" for="theme-dark">
-                              Dark
-                            </label>
-                          </div>
-                        </div>
-                        <div class="mb-3">
-                          <label for="date-format" class="form-label">Date Format</label>
-                          <select class="form-select" id="date-format">
-                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                          </select>
-                        </div>
-                        <div class="mb-3">
-                          <label for="language" class="form-label">Language</label>
-                          <select class="form-select" id="language">
-                            <option value="en">English</option>
-                            <option value="es">Spanish</option>
-                            <option value="fr">French</option>
-                          </select>
-                        </div>
-                        <div class="mb-3 form-check">
-                          <input type="checkbox" class="form-check-input" id="auto-backup">
-                          <label class="form-check-label" for="auto-backup">Enable automatic backups</label>
-                        </div>
-                        <button type="button" class="btn btn-primary" id="save-preferences-btn">Save Preferences</button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Qualifications Settings -->
-                <div id="qualifications-settings" class="settings-tab">
-                  <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                      <h5 class="mb-0">Teacher Qualifications</h5>
-                      <button type="button" class="btn btn-primary btn-sm" id="add-qualification-btn">
-                        <i class="bi bi-plus"></i> Add New
-                      </button>
-                    </div>
-                    <div class="card-body">
-                      <p>Manage teacher qualification options that will be available when adding or editing teachers.</p>
-                      <div class="table-responsive">
-                        <table class="table table-striped">
-                          <thead>
-                            <tr>
-                              <th>ID</th>
-                              <th>Qualification Name</th>
-                              <th>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody id="qualifications-table-body">
-                            <!-- Qualifications will be loaded here -->
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Backup & Restore Settings -->
-                <div id="backup-restore-settings" class="settings-tab">
-                  <div class="card">
-                    <div class="card-header">
-                      <h5 class="mb-0">Backup & Restore</h5>
-                    </div>
-                    <div class="card-body">
-                      <div class="mb-4">
-                        <h6>Backup Data</h6>
-                        <p>Create a backup of all your school data.</p>
-                        <button type="button" class="btn btn-primary" id="create-backup-btn">
-                          <i class="bi bi-download"></i> Create Backup
-                        </button>
-                      </div>
-                      <hr>
-                      <div class="mb-4">
-                        <h6>Restore Data</h6>
-                        <p>Restore data from a previous backup file.</p>
-                        <div class="mb-3">
-                          <label for="restore-file" class="form-label">Select Backup File</label>
-                          <input class="form-control" type="file" id="restore-file">
-                        </div>
-                        <button type="button" class="btn btn-warning" id="restore-backup-btn">
-                          <i class="bi bi-upload"></i> Restore Backup
-                        </button>
-                      </div>
-                      <hr>
-                      <div>
-                        <h6>Reset Data</h6>
-                        <p class="text-danger">Warning: This will delete all data and reset the application to default settings.</p>
-                        <button type="button" class="btn btn-danger" id="reset-data-btn">
-                          <i class="bi bi-exclamation-triangle"></i> Reset All Data
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
-
-          <!-- Other content pages will be added here -->
         </div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Replace Bootstrap JavaScript CDN with basic implementation -->
+  <script>
+    // Basic implementation of Bootstrap functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tab navigation
+      const navLinks = document.querySelectorAll('.nav-link');
+      const contentPages = document.querySelectorAll('.content-page');
+      
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Remove active class from all links and pages
+          navLinks.forEach(l => l.classList.remove('active'));
+          contentPages.forEach(p => p.classList.remove('active'));
+          
+          // Add active class to clicked link
+          this.classList.add('active');
+          
+          // Show corresponding content page
+          const targetPage = this.getAttribute('data-page');
+          document.getElementById(targetPage).classList.add('active');
+        });
+      });
+      
+      // Settings tabs
+      const settingsTabs = document.querySelectorAll('[data-settings-tab]');
+      const settingsContents = document.querySelectorAll('.settings-tab');
+      
+      settingsTabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Remove active class from all tabs and contents
+          settingsTabs.forEach(t => t.classList.remove('active'));
+          settingsContents.forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          this.classList.add('active');
+          
+          // Show corresponding content
+          const targetTab = this.getAttribute('data-settings-tab');
+          document.getElementById(targetTab).classList.add('active');
+        });
+      });
+      
+      // Modal functionality
+      const modalBackdrop = document.createElement('div');
+      modalBackdrop.className = 'modal-backdrop fade';
+      modalBackdrop.style.position = 'fixed';
+      modalBackdrop.style.top = '0';
+      modalBackdrop.style.left = '0';
+      modalBackdrop.style.width = '100%';
+      modalBackdrop.style.height = '100%';
+      modalBackdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modalBackdrop.style.zIndex = '1040';
+      modalBackdrop.style.display = 'none';
+      document.body.appendChild(modalBackdrop);
+      
+      // Function to open modal
+      window.openModal = function(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.style.display = 'block';
+          modal.classList.add('show');
+          document.body.classList.add('modal-open');
+          modalBackdrop.style.display = 'block';
+          setTimeout(() => {
+            modalBackdrop.classList.add('show');
+          }, 10);
+        }
+      };
+      
+      // Function to close modal
+      window.closeModal = function(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.remove('show');
+          document.body.classList.remove('modal-open');
+          modalBackdrop.classList.remove('show');
+          setTimeout(() => {
+            modal.style.display = 'none';
+            modalBackdrop.style.display = 'none';
+          }, 300);
+        }
+      };
+      
+      // Setup modal triggers
+      document.querySelectorAll('[data-bs-toggle="modal"]').forEach(trigger => {
+        trigger.addEventListener('click', function() {
+          const targetModalId = this.getAttribute('data-bs-target').substring(1);
+          window.openModal(targetModalId);
+        });
+      });
+      
+      // Setup modal close buttons
+      document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
+        button.addEventListener('click', function() {
+          const modal = this.closest('.modal');
+          if (modal) {
+            window.closeModal(modal.id);
+          }
+        });
+      });
+      
+      // Close modal when clicking on backdrop
+      modalBackdrop.addEventListener('click', function() {
+        document.querySelectorAll('.modal.show').forEach(modal => {
+          window.closeModal(modal.id);
+        });
+      });
+      
+      // Add student button
+      const addStudentBtn = document.getElementById('add-student-btn');
+      if (addStudentBtn) {
+        addStudentBtn.addEventListener('click', function() {
+          window.openModal('studentModal');
+        });
+      }
+      
+      // Add teacher button
+      const addTeacherBtn = document.getElementById('add-teacher-btn');
+      if (addTeacherBtn) {
+        addTeacherBtn.addEventListener('click', function() {
+          window.openModal('teacherModal');
+        });
+      }
+      
+      // Add class button
+      const addClassBtn = document.getElementById('add-class-btn');
+      if (addClassBtn) {
+        addClassBtn.addEventListener('click', function() {
+          window.openModal('classModal');
+        });
+      }
+      
+      // Collect fees button
+      const collectFeesBtn = document.getElementById('collect-fees-btn');
+      if (collectFeesBtn) {
+        collectFeesBtn.addEventListener('click', function() {
+          window.openModal('collectFeeModal');
+        });
+      }
+    });
+  </script>
   <script src="renderer.js"></script>
 </body>
 </html> 

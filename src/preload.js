@@ -49,7 +49,17 @@ contextBridge.exposeInMainWorld(
         'restoreBackup',
         'resetData',
         'showSaveDialog',
-        'selectLogo'
+        'selectLogo',
+        'uploadStudentPhoto',
+        'getStudentPhoto',
+        'getFees',
+        'getFeesByStudent',
+        'getFeesByMonthYear',
+        'getFeesByStatus',
+        'saveFee',
+        'deleteFee',
+        'getFeeSummary',
+        'exportPDF'
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, data);
@@ -99,7 +109,17 @@ contextBridge.exposeInMainWorld(
         'restoreResponse',
         'resetResponse',
         'createBackup',
-        'logoSelected'
+        'logoSelected',
+        'uploadStudentPhotoResponse',
+        'getStudentPhotoResponse',
+        'feesData',
+        'feesByStudentData',
+        'feesByMonthYearData',
+        'feesByStatusData',
+        'saveFeeResponse',
+        'deleteFeeResponse',
+        'feeSummaryData',
+        'exportPDFResponse'
       ];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender` 
